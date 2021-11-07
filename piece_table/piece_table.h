@@ -1,11 +1,36 @@
+#include <string>
+#include <vector>
+using namespace std;
+
+#ifndef __PIECE_TABLE_H__
+#define __PIECE_TABLE_H__
+
+namespace PieceTable {
 
 
-typedef struct piece_table_t {
-    int something_goes_here;
-} PT_t;
+	enum SourceBuffer {ORIGINAL, ADD};
 
-/* Inserts character to piece table */
-void insert(PT_t *PT, char c);
+	typedef struct piece {
+		SourceBuffer src;
+		size_t start;
+		size_t len;
+	} P;
 
-/* Deletes character from piece table */
-void delete(PT_t *PT);
+	typedef struct piece_table_t {
+    		string original;
+		string add;
+		vector<P*> pieces;
+	} PT;
+
+	void init(PT *T, string file_path);
+
+	string stitch(PT *T);
+
+	/* Inserts string of character to piece table */
+	void insert(PT *T, string s, size_t offset);
+
+	/* Deletes character from piece table */
+	void remove(PT *T);
+}
+
+#endif /* __PIECE_TABLE_H__ */
