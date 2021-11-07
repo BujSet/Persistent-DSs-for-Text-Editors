@@ -9,7 +9,7 @@
 
 using namespace std;
 
-void PieceTable::init(PieceTable::PT *T, string file_path) {
+void PieceTable::open(PieceTable::PT *T, string file_path) {
 	if (!T) {
 		cout << "Must allocate T first!\n";
 		return;
@@ -143,7 +143,7 @@ void PieceTable::remove(PieceTable::PT *T, size_t offset, size_t len) {
 		cout << "Unable to remove string from null piece table\n";
 		return;
 	}
-	cout << "Removing " << len << " bytes from offset " << offset << "\n";
+	//cout << "Removing " << len << " bytes from offset " << offset << "\n";
 
 	size_t char_cnt = 0;
 	size_t prev_start_char_cnt = 0, prev_end_char_cnt = 0;
@@ -151,7 +151,7 @@ void PieceTable::remove(PieceTable::PT *T, size_t offset, size_t len) {
 	bool start_on_boundary = false;
 	for (size_t i = 0; i < T->pieces.size(); i++) {
 		rmv_start_idx = i;
-		cout << "offset=" << offset << " char_cnt=" << char_cnt << "\n";
+		//cout << "offset=" << offset << " char_cnt=" << char_cnt << "\n";
 		if (offset == char_cnt) {
 			start_on_boundary = true;
 			break;
@@ -179,8 +179,8 @@ void PieceTable::remove(PieceTable::PT *T, size_t offset, size_t len) {
 		prev_end_char_cnt = char_cnt;
 	}
 
-	cout << "Need to remove text from pieces " << rmv_start_idx << " to " << rmv_end_idx << "\n";
-	cout << "start_on_boundary=" << start_on_boundary << " end_on_boundary=" << end_on_boundary << "\n";
+	//cout << "Need to remove text from pieces " << rmv_start_idx << " to " << rmv_end_idx << "\n";
+	//cout << "start_on_boundary=" << start_on_boundary << " end_on_boundary=" << end_on_boundary << "\n";
 	vector<PieceTable::P*>::iterator it_start = T->pieces.begin() + rmv_start_idx;
 	vector<PieceTable::P*>::iterator it_end  = T->pieces.begin() + rmv_end_idx;
 	if (start_on_boundary && end_on_boundary && rmv_start_idx == rmv_end_idx) {
@@ -255,7 +255,41 @@ void PieceTable::remove(PieceTable::PT *T, size_t offset, size_t len) {
 		assert(!start_on_boundary);
 		assert(!end_on_boundary);
 		assert(rmv_start_idx != rmv_end_idx);
-		//TODO
-		cout << "Hello world\n";
+		it_start = T->pieces.begin() + (rmv_start_idx + 1); // Don't remove the one we are splitting
+		it_end = T->pieces.begin() + (rmv_end_idx - 1);     // Don't remove the one we are splitting
+		vector<PieceTable::P*> delems;
+		for (size_t i = 0; i < T->pieces.size(); i++) {
+			if (rmv_start_idx + 1 <= i && i <= rmv_end_idx - 1) {
+				delems.push_back(T->pieces[i]);
+			}
+		}
+		if (rmv_start_idx  + 1 <= rmv_end_idx -1 ){
+			T->pieces.erase(it_start, it_end);
+		}
+		for (PieceTable::P *piece: delems) {
+			free(piece);
+		}
+		PieceTable::P *prev = T->pieces[rmv_start_idx];
+		PieceTable::P *post = T->pieces[rmv_end_idx];
+		prev->len = offset - prev_start_char_cnt;
+		size_t old_post_start = post->start;
+		post->start = old_post_start + (offset - prev_end_char_cnt);
+		post->len = post->len - (post->start - old_post_start);
+	}
+}
+
+void PieceTable::close(PieceTable::PT *T, string file_path) {
+	if (!T) {
+		cout << "Unable to close null piece table!\n";
+		return;
+	}
+	string text = PieceTable::stitch(T);
+	ofstream out_file;
+	out_file.open(file_path);
+	out_file << text;
+	out_file.close();
+
+	for (PieceTable::P *piece: T->pieces) {
+		free(piece);
 	}
 }

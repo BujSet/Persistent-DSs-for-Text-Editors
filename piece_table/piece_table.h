@@ -22,7 +22,7 @@ namespace PieceTable {
 		vector<P*> pieces;
 	} PT;
 
-	void init(PT *T, string file_path);
+	void open(PT *T, string file_path);
 
 	string stitch(PT *T);
 
@@ -31,6 +31,8 @@ namespace PieceTable {
 
 	/* Deletes character from piece table */
 	void remove(PT *T, size_t offset, size_t len);
+
+	void close(PT *T, string file_path);
 }
 
 #endif /* __PIECE_TABLE_H__ */
