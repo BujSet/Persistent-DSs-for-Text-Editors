@@ -30,7 +30,7 @@ namespace PieceTable {
 	void insert(PT *T, string s, size_t offset);
 
 	/* Deletes character from piece table */
-	void remove(PT *T);
+	void remove(PT *T, size_t offset, size_t len);
 }
 
 #endif /* __PIECE_TABLE_H__ */

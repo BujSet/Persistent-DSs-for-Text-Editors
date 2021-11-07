@@ -22,5 +22,8 @@ int main (int argc, char *argv[]) {
 	PieceTable::insert(T, " INSERTION", 11);
 	text =  PieceTable::stitch(T);
 	cout << text;
+	PieceTable::remove(T, 21, 6); // Remove " ipsum" from text
+	text =  PieceTable::stitch(T);
+	cout << text;
 	return 0;
 }
