@@ -3,54 +3,83 @@
 
 using namespace std;
 
+/**
+ * This inspiration for this class has been taken from the 
+ * concepts and the code that has been described here:
+ * https://www.geeksforgeeks.org/gap-buffer-data-structure/
+ * All the functionalities mentioned here have been implemented.
+ */ 
+
 class GapBuffer {
 
     public:
             vector<char> buffer;
-            int gap_size = 10;
-            int gap_left = 0;
-            int gap_right = gap_size - gap_left - 1;
+            int gapSize = 10;
+            int gapLeft = 0;
+            int gapRight = gapSize - gapLeft - 1;
             int size = 10;
 
+            /**
+             *  This function moves is used to grow the gap 
+             *  at index position and return the vector 
+             */
             void grow(int k, int position) {
                 
                 char copy[size];
+
+                // The characters of the buffer after 'position' 
+                // are copied to the copy array
                 for (int i = position; i < size; i++) {
                     copy[i - position] = buffer[i];
                 }
 
+                // A gap of 'k' is inserted from the 'position' index
+                // The gap is represented by '_'
                 for (int i = 0; i < k; i++) {
                     buffer.insert(buffer.begin() + i + position, '_');
                 }
 
+                // The remaining array is inserted
                 for (int i = 0; i < k + position; i++) {
                     buffer.insert(buffer.begin()+ position + i + k, copy[i]);
                 }
 
                 size += k;
-                gap_right+=k;
+                gapRight += k;
             }
             
+            /**
+             *  This function moves the gap to the left, in the vector 
+             */
             void left(int position) {
-                while (position < gap_left) {
-                    gap_left--;
-                    gap_right--;
-                    buffer.at(gap_right + 1) = buffer[gap_left];
-                    buffer.at(gap_left) = '_';
+                // Moves the gap left, character by character
+                while (position < gapLeft) {
+                    gapLeft--;
+                    gapRight--;
+                    buffer.at(gapRight + 1) = buffer[gapLeft];
+                    buffer.at(gapLeft) = '_';
                 }
             }
-
+            
+            /**
+             *  This function moves the gap to the right, in the vector 
+             */
             void right(int position) {
-                while (position > gap_left) {
-                    gap_left++;
-                    gap_right++;
-                    buffer.at(gap_left - 1) = buffer[gap_right];
-                    buffer.at(gap_right) = '_';
+                // Moves the gap right, character by character
+                while (position > gapLeft) {
+                    gapLeft++;
+                    gapRight++;
+                    buffer.at(gapLeft - 1) = buffer[gapRight];
+                    buffer.at(gapRight) = '_';
                 }                
             }
 
-            void move_cursor(int position) {
-                if (position < gap_left) {
+            /**
+             *  This function controls the movement of the gap
+             *  by checking its position to the point of insertion 
+             */
+            void moveCursor(int position) {
+                if (position < gapLeft) {
                     left(position);
                 }
                 else {
@@ -58,34 +87,44 @@ class GapBuffer {
                 }
             }
 
-            void insert(string input_string, int position) {
+            /**
+             *  This function inserts the 'input' string to the
+             *  buffer at the point 'position'
+             */
+            void insert(string input, int position) {
                 
-                int i, len = input.length();
-                i = 0;
+                int i = 0, len = input.length();
 
-                if (position != gap_left) {
-                    move_cursor(position);
+                if (position != gapLeft) {
+                    moveCursor(position);
                 }
 
                 while (i < len) {
-                    if (gap_right == gap_left) {
+
+                    // If the gap is empty, we need to grow the gap
+                    if (gapRight == gapLeft) {
                         int k = 10;
                         grow(k, position);
                     }
-                    buffer.at(gap_left) = input[i];
-                    gap_left++;
+
+                    // Insert the character in the gap and move the gap
+                    buffer.at(gapLeft) = input[i];
+                    gapLeft++;
                     i++;
                     position++;
                 }
             }
 
-            void delete_character(int position) {
+            /**
+             *  This function deletes the character at the 'position' index
+             */
+            void deleteCharacter(int position) {
                 
-                if (gap_left != position + 1) {
-                    move_cursor(position + 1);
+                if (gapLeft != position + 1) {
+                    moveCursor(position + 1);
                 }
-                gap_left--;
-                buffer.at(gap_left) = '_';
+                gapLeft--;
+                buffer.at(gapLeft) = '_';
             }       
 
 }
