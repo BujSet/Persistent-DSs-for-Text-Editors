@@ -26,13 +26,26 @@ void PieceTable::open(PieceTable::PT *T, string file_path) {
 		cout << "Unable to malloc initial piece!\n";
 		return;
 	}
+	PieceTable::Cursor *C = (PieceTable::Cursor *)malloc(sizeof(PieceTable::Cursor));
+	if (!C) {
+		cout << "Unable to malloc cursor struct\n!";
+		free(P);
+		return;
+	}
+
 	stringstream strStream;
     	strStream << in_file.rdbuf(); //read the file
     	T->original = strStream.str();
+
 	P->src = ORIGINAL;
 	P->start = 0;
 	P->len = T->original.length();
 	T->pieces.push_back(P);
+
+	C->pos = 0;
+	C->piece_idx = 0;
+	C->piece_offset = 0;
+	T->cursor = C;
 }
 
 string PieceTable::stitch(PieceTable::PT *T) {
@@ -54,6 +67,28 @@ string PieceTable::stitch(PieceTable::PT *T) {
 		}
 	}
 	return ret;
+}
+
+void PieceTable::insert(PieceTable::PT *T, string s) {
+	if (!T) {
+		cout << "Unable to insert string to null piece table!\n";
+		return;
+	}
+	// First we create a piece to represent this addition
+	PieceTable::P *P = (PieceTable::P *)malloc(sizeof(PieceTable::P));
+	if (!P) {
+		cout << "Unable to malloc new piece for insertion!\n";
+		return;
+	}
+	P->src = PieceTable::ADD;
+	P->start = T->add.length();
+	P->len = s.length();
+
+	// Next we place the string into the add buffer
+	T->add.append(s);
+	
+	PieceTable::Cursor *C = T->cursor;
+
 }
 
 void PieceTable::insert(PieceTable::PT *T, string s, size_t offset) {
@@ -278,6 +313,78 @@ void PieceTable::remove(PieceTable::PT *T, size_t offset, size_t len) {
 	}
 }
 
+int PieceTable::get_cursor_pos(PieceTable::PT *T) {
+	if (!T) {
+		cout << "Cannot find cursor on a null table\n";
+		return -1;
+	}
+	return T->cursor->pos;
+}
+
+void PieceTable::seek(PieceTable::PT *T, size_t offset, PieceTable::SeekDir dir) {
+	if (offset == 0) {
+		return;
+	}
+
+	if (!T) {
+		cout << "Cannot move cursor on null piece table!\n";
+		return;
+	}
+	
+	cout << "Attempting to move cursor from " << T->cursor->pos << " by " << offset << " bytes in dir " << dir << "\n"; 
+
+	size_t bytes_moved = 0, bytes_to_move;
+	PieceTable::Cursor *C = T->cursor;
+	while (bytes_moved < offset) {
+		bytes_to_move = offset - bytes_moved;
+		PieceTable::P *piece = T->pieces[C->piece_idx];
+		if (dir==PieceTable::FWD) {
+			if ((piece->len - C->piece_offset) > bytes_to_move) {
+				C->pos += bytes_to_move;
+				C->piece_offset += bytes_to_move;
+				break; // we're done seeking to new position
+			}
+			assert((piece->len - C->piece_offset) <= bytes_to_move);
+			C->pos += piece->len - C->piece_offset;
+			C->piece_idx++;
+			C->piece_offset = 0;
+			bytes_moved += piece->len - C->piece_offset;
+		} else {
+			assert(dir == PieceTable::BWD);
+			if (C->piece_offset > bytes_to_move) {
+				C->pos -= bytes_to_move;
+				C->piece_offset -= bytes_to_move;
+				break; // we're done seeking to new position
+			}
+			assert(C->piece_offset <= bytes_to_move);
+			C->pos -= C->piece_offset;
+			C->piece_idx--;
+			C->piece_offset = T->pieces[C->piece_idx]->len;
+			bytes_moved += C->piece_offset;
+		}
+	}
+	
+}
+
+char PieceTable::getc(PieceTable::PT *T) {
+	if (!T) {
+		cout << "Unbale to get character from null piece table\n";
+		return -1;
+	}
+	PieceTable::Cursor *C = T->cursor;
+	PieceTable::P *piece = T->pieces[C->piece_idx];
+	char c;
+	if (piece->src == PieceTable::ORIGINAL) {
+		c = T->original.at(C->piece_offset);
+	} else {
+		assert(piece->src == PieceTable::ADD);
+		c = T->add.at(C->piece_offset);
+	}
+	// Now move cursor
+	PieceTable::seek(T, 1, PieceTable::FWD);
+	return c;
+}
+
 void PieceTable::close(PieceTable::PT *T, string file_path) {
 	if (!T) {
 		cout << "Unable to close null piece table!\n";
@@ -292,4 +399,5 @@ void PieceTable::close(PieceTable::PT *T, string file_path) {
 	for (PieceTable::P *piece: T->pieces) {
 		free(piece);
 	}
+	free(T->cursor);
 }

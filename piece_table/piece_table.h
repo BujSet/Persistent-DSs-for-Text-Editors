@@ -10,6 +10,14 @@ namespace PieceTable {
 
 	enum SourceBuffer {ORIGINAL, ADD};
 
+	enum SeekDir {FWD=1, BWD=-1};
+
+	typedef struct cursor_t {
+		size_t pos;
+		size_t piece_idx;
+		size_t piece_offset;
+	} Cursor;
+
 	typedef struct piece {
 		SourceBuffer src;
 		size_t start;
@@ -20,7 +28,10 @@ namespace PieceTable {
     		string original;
 		string add;
 		vector<P*> pieces;
+		Cursor *cursor;
 	} PT;
+
+
 
 	void open(PT *T, string file_path);
 
@@ -31,6 +42,12 @@ namespace PieceTable {
 
 	/* Deletes character from piece table */
 	void remove(PT *T, size_t offset, size_t len);
+
+	int get_cursor_pos(PT *T);
+
+	void seek(PT *T, size_t offset, SeekDir dir);
+
+	char getc(PT *T);
 
 	void close(PT *T, string file_path);
 }

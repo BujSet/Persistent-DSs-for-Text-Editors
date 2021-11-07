@@ -10,22 +10,24 @@ int main (int argc, char *argv[]) {
 	}
 	PieceTable::PT *T = (PieceTable::PT *)malloc(sizeof(PieceTable::PT));
 	PieceTable::open(T, argv[1]);
-	PieceTable::insert(T, "Hello ", 0);
-	string text =  PieceTable::stitch(T);
-	cout << text;
-	PieceTable::insert(T, " World", text.length() - 1);
-	text =  PieceTable::stitch(T);
-	cout << text;
-	PieceTable::insert(T, " INSERTION", 11);
-	text =  PieceTable::stitch(T);
-	cout << text;
-	PieceTable::remove(T, 21, 6); // Remove " ipsum" from text
-	text =  PieceTable::stitch(T);
-	cout << text;
-	cout << text.length();
-	PieceTable::remove(T, text.length() - 6, 6); // Remove " World" from text
-	text =  PieceTable::stitch(T);
-	cout << text;
+	int cursor_pos = PieceTable::get_cursor_pos(T);
+	cout << "Cursor initially set to " << cursor_pos << "\n";
+	char c = PieceTable::getc(T);
+	cout << "First char is " << c << "\n";
+	cursor_pos = PieceTable::get_cursor_pos(T);
+	cout << "Cursor moved to " << cursor_pos << "\n";
+	PieceTable::seek(T, 9, PieceTable::FWD);
+	cursor_pos = PieceTable::get_cursor_pos(T);
+	cout << "Cursor moved to " << cursor_pos << "\n";
+	c = PieceTable::getc(T);
+	cout << "Next char is " << c << "\n";
+	cursor_pos = PieceTable::get_cursor_pos(T);
+	cout << "Cursor moved to " << cursor_pos << "\n";
+
+	PieceTable::seek(T, 2, PieceTable::BWD);
+	cursor_pos = PieceTable::get_cursor_pos(T);
+	cout << "Cursor moved to " << cursor_pos << "\n";
+
 	PieceTable::close(T, "hello.txt");
 	free(T);
 	return 0;
