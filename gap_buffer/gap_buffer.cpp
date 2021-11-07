@@ -13,10 +13,29 @@ class GapBuffer {
             int size = 10;
 
             void grow(int k, int position);
-            void left(int position);
-            void right(int position);
+            
+            void left(int position) {
+                while (position < gap_left) {
+                    gap_left--;
+                    gap_right--;
+                    buffer.at(gap_right + 1) = buffer[gap_left];
+                    buffer.at(gap_left) = '_';
+                }
+            }
+
+            void right(int position) {
+                while (position > gap_left) {
+                    gap_left++;
+                    gap_right++;
+                    buffer.at(gap_left - 1) = buffer[gap_right];
+                    buffer.at(gap_right) = '_';
+                }                
+            }
+
             void move_cursor(int position);
+
             void insert(string input_string, int position);
+
             void delete_character(int position);        
 
 }
