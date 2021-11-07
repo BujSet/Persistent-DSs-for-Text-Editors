@@ -25,7 +25,8 @@ class GapBuffer {
              */
             void grow(int k, int position) {
                 
-                char copy[size];
+                // char copy[size];
+                vector<char> copy(size);
 
                 // The characters of the buffer after 'position' 
                 // are copied to the copy array
