@@ -37,17 +37,19 @@ namespace PieceTable {
 
 	string stitch(PT *T);
 
-	/* Inserts string of character to piece table */
-	void insert(PT *T, string s, size_t offset);
+	void insert(PT *T, string s);
 
-	/* Deletes character from piece table */
-	void remove(PT *T, size_t offset, size_t len);
+	void remove(PT *T, size_t len);
 
 	int get_cursor_pos(PT *T);
 
+	void print_cursor(Cursor *C);
+
 	void seek(PT *T, size_t offset, SeekDir dir);
 
-	char getc(PT *T);
+	void rewind(PT *T);
+
+	void print_table(PT *T);
 
 	void close(PT *T, string file_path);
 }
