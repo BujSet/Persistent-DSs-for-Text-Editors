@@ -57,14 +57,11 @@ string PieceTable::stitch(PieceTable::PT *T) {
 		return "";
 	}
 	string ret;
-	//cout << "stitch called when there are " << T->pieces.size() <<" pieces\n";
 	for (const auto& P: T->pieces) {
 		assert(P);
 		if (P->src == PieceTable::ORIGINAL) {
-			//cout << "Reading " << P->len << " bytes from offset " << P->start << " from original buffer\n";
 			ret.append(T->original, P->start, P->len);
 		} else {
-			//cout << "Reading " << P->len << " bytes from offset " << P->start << " from add buffer\n";
 			assert(P->src == PieceTable::ADD);
 			ret.append(T->add, P->start, P->len);
 		}
@@ -132,46 +129,42 @@ void PieceTable::remove(PieceTable::PT *T, size_t len) {
 	PieceTable::Cursor *C;
 	PieceTable::P *piece;
 	while (bytes_to_remove) {
-		//cout << "Top of loop, bytes_to_remove=" << bytes_to_remove << "\n";
 		C = T->cursor;
 		piece = T->pieces[C->piece_idx];
 
 		if (C->piece_offset == 0) {
-			//cout << "Attempting to remove piece that is on start boundary, piece_idx=" << C->piece_idx << "\n";
-			//cout << "bytes_to_remove=" << bytes_to_remove << ", piece->len=" << piece->len << "\n";
 			if (bytes_to_remove >= piece->len) {
-				//cout << "Removing entire piece\n";
 				bytes_to_remove -= piece->len;
 				T->pieces.erase(T->pieces.begin() + C->piece_idx);
 				free(piece);
 			} else {
-				//cout << "Removing part of a piece, bytes_to_remove="<<bytes_to_remove<<"\n";
-				//PieceTable::print_table(T);
-				T->pieces[C->piece_idx]->start = bytes_to_remove; 
-				T->pieces[C->piece_idx]->len = (piece->len - piece->start);
+				piece->start += bytes_to_remove; 
+				piece->len -= bytes_to_remove;
 				bytes_to_remove = 0;
-				//PieceTable::print_table(T);
 			}
 		} else { 
-			//cout << "Need to break piece in the middle, C->piece_offset=" << C->piece_offset << ", bytes_to_remove="<<bytes_to_remove<<"\n";
 			// Need to break up the cursor piece
 			if (bytes_to_remove > (piece->len - C->piece_offset)) {
-				//cout << "Break extends past end of current piece\n";
 				bytes_to_remove -= (piece->len - C->piece_offset);
 				piece->len = C->piece_offset;
 				C->piece_idx++;
 				C->piece_offset = 0;
 			} else {
-				//cout << "Break contained in current piece\n";
-				PieceTable::P *post = (PieceTable::P *)malloc(sizeof(PieceTable::P));
-				post->src = piece->src;
-				post->start = bytes_to_remove + C->piece_offset;
-				post->len = piece->len - (bytes_to_remove + C->piece_offset);
-				piece->len = C->piece_offset;
-				bytes_to_remove = 0;
-				C->piece_idx++;
-				C->piece_offset = 0;
-				T->pieces.insert(T->pieces.begin()+C->piece_idx, post);
+				if (bytes_to_remove == (piece->len - C->piece_offset)) {
+					piece->len -= bytes_to_remove;
+					bytes_to_remove = 0;
+				}
+				else {
+					PieceTable::P *post = (PieceTable::P *)malloc(sizeof(PieceTable::P));
+					post->src = piece->src;
+					post->start = piece->start + bytes_to_remove + C->piece_offset;
+					post->len = piece->len - post->start;
+					piece->len = C->piece_offset;
+					bytes_to_remove = 0;
+					C->piece_idx++;
+					C->piece_offset = 0;
+					T->pieces.insert(T->pieces.begin()+C->piece_idx, post);
+				}
 			}
 		}
 	}
@@ -191,8 +184,6 @@ void PieceTable::print_cursor(PieceTable::Cursor *C) {
 		return;
 	}
 	cout << "Cursor:={pos=" << C->pos << ", piece_idx=" << C->piece_idx << ", piece_offset=" << C->piece_offset << "}\n";
-	//PieceTable::P *piece = T->pieces[C->piece_idx];
-	//cout << "CursorPiece:={src=" << piece->src << ", start=" << piece->start << ", len=" << piece->len << "}\n";
 }
 
 void PieceTable::seek(PieceTable::PT *T, size_t offset, PieceTable::SeekDir dir) {
@@ -211,8 +202,6 @@ void PieceTable::seek(PieceTable::PT *T, size_t offset, PieceTable::SeekDir dir)
 		bytes_to_move = offset - bytes_moved;
 		PieceTable::P *piece = T->pieces[C->piece_idx];
 		if (dir==PieceTable::FWD) {
-			cout << "Moving forwards by " << offset << ", bytes_to_move=" << bytes_to_move << ", bytes_moved=" << bytes_moved <<"\n";
-			PieceTable::print_cursor(T->cursor);
 			if ((piece->len - C->piece_offset) > bytes_to_move) {
 				C->pos += bytes_to_move;
 				C->piece_offset += bytes_to_move;
@@ -225,22 +214,16 @@ void PieceTable::seek(PieceTable::PT *T, size_t offset, PieceTable::SeekDir dir)
 			bytes_moved += piece->len - C->piece_offset;
 		} else {
 			assert(dir == PieceTable::BWD);
-			cout << "Moving backwards by " << offset << ", bytes_to_move=" << bytes_to_move <<", bytes_moved="<<bytes_moved<< "\n";
-			PieceTable::print_cursor(T->cursor);
 			if (C->piece_offset >= bytes_to_move) {
 				C->pos -= bytes_to_move;
 				C->piece_offset -= bytes_to_move;
 				break; // we're done seeking to new position
 			}
 			assert(C->piece_offset <= bytes_to_move);
-			cout << "Middle of moving backwards by " << offset << ", bytes_to_move=" << bytes_to_move << ", bytes_moved=" << bytes_moved<< "\n";
-			PieceTable::print_cursor(T->cursor);
 			C->pos -= C->piece_offset;
 			C->piece_idx--;
 			bytes_moved += C->piece_offset;
 			C->piece_offset = T->pieces[C->piece_idx]->len;
-			cout << "End of moving backwards by " << offset << ", bytes_to_move=" << bytes_to_move << ", bytes_moved=" << bytes_moved<< "\n";
-			PieceTable::print_cursor(T->cursor);
 		}
 	}
 	
@@ -280,11 +263,25 @@ void PieceTable::print_table(PieceTable::PT *T) {
 	}
 	cout << "/---------- Printing piece table -----------\\\n";
 	PieceTable::P *piece;
+	char c;
 	for (size_t i = 0; i < T->pieces.size(); i++) {
 		piece = T->pieces[i];
-		cout << "\tP[" << i << "]:={" << piece->src << ", start=" << piece->start << ", len=" << piece->len << "}\n";
+		if (piece->src == PieceTable::ORIGINAL) {
+			c = T->original.at( piece->start);
+		} else {
+			c = T->add.at(piece->start);
+		}
+		cout << "\tP[" << i << "]:={" << piece->src << ", start=" << piece->start << ", len=" << piece->len << ", c="<< c<<"}\n";
 	}
 	PieceTable::print_cursor(T->cursor);
+	piece = T->pieces[T->cursor->piece_idx];
+	if (piece->src == PieceTable::ORIGINAL) {
+		c = T->original.at(piece->start + T->cursor->piece_offset);
+	} else {
+		c = T->add.at(piece->start + T->cursor->piece_offset);
+	}
+
+	cout << "Char at cursor =" << c << "\n"; 
 	cout << "\\------------- End piece table -------------/\n";
 	
 }
