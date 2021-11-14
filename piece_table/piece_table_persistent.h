@@ -46,34 +46,33 @@ namespace PieceTable {
     	string_type original;
 		string_type add;
 		pobj::persistent_ptr<piece_vector_type> pieces;
-		pobj::persistent_ptr<cursor> cursorPieceTable;
-	} pieceTable;
+		pobj::persistent_ptr<cursor> cursor_pt;
+	} piece_table;
 
 	typedef struct root {
-		pobj::persistent_ptr<pieceTable> rootPieceTable;
-		pobj::persistent_ptr<cursor> rootCursor;
+		pobj::persistent_ptr<piece_table> root_piece_table;
 	} root;
 
 
-	void create(pobj::pool<root> pop, string file_path);
+	void create(pobj::pool<PieceTable::root> pop, string file_path);
 
-	string stitch(pobj::pool<root> pop);
+	string stitch(pobj::pool<PieceTable::root> pop);
 
-	void insert(pobj::pool<root> pop, string s);
+	void insert(pobj::pool<PieceTable::root> pop, string s);
 
-	void remove(pobj::pool<root> pop, size_t len);
+	void remove(pobj::pool<PieceTable::root> pop, size_t len);
 
-	int get_cursor_pos(pobj::pool<root> pop);
+	int get_cursor_pos(pobj::pool<PieceTable::root> pop);
 
-	void print_cursor(pobj::pool<root> pop);
+	void print_cursor(pobj::pool<PieceTable::cursor> c);
 
-	void seek(pobj::pool<root> pop, size_t offset, SeekDir dir);
+	void seek(pobj::pool<PieceTable::root> pop, size_t offset, SeekDir dir);
 
-	void rewind(pobj::pool<root> pop);
+	void rewind(pobj::pool<PieceTable::root> pop);
 
-	void print_table(pobj::pool<root> pop);
+	void print_table(pobj::pool<PieceTable::root> pop);
 
-	void close(pobj::pool<root> pop, string file_path);
+	void close(pobj::pool<PieceTable::root> pop, string file_path);
 }
 
 #endif /* __PIECE_TABLE_H__ */

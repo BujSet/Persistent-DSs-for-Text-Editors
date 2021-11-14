@@ -2,13 +2,15 @@
 
 #include "piece_table_persistent.h"
 
+namespace pobj = pmem::obj;
+
 using namespace std;
 
 int main (int argc, char *argv[]) {
-	pmem::obj::pool<PieceTable::root> pop;
+	pobj::pool<PieceTable::root> pop;
 	auto r = pop.root();
 	int ip;
-	char fileName[20], insertStr[50];
+	string fileName, insertStr;
 
 	while(1){
 		printf("1-> Create piece table\t2-> Insert\t3-> Seek\t4-> Remove\t5-> Rewind\n");
@@ -17,15 +19,7 @@ int main (int argc, char *argv[]) {
 		if(ip == 1){
 			cout<<"Enter file name: ";
 			cin>>fileName;
-
-			if (access(fileName, F_OK) != 0) {
-				pop = pmem::obj::pool<PieceTable::root>::create(fileName, DEFAULT_LAYOUT, PMEMOBJ_MIN_POOL);		
-				
-				PieceTable::create(pop, fileName);
-			}
-			else {
-				pop = pmem::obj::pool<PieceTable::root>::open(fileName, DEFAULT_LAYOUT);
-			}
+			PieceTable::create(pop, fileName);
 		}
 		else if(ip == 2){
 			cout<<"Enter string to be inserted: ";
