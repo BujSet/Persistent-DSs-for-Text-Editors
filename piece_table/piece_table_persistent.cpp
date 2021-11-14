@@ -16,17 +16,9 @@ void PieceTable::create(pobj::pool<PieceTable::root> pop, string file_path) {
 	pobj::persistent_ptr<cursor> c;
 	ifstream in_file;		
 
-	if (access(file_path.c_str(), F_OK) != 0) {
-		pop = pmem::obj::pool<PieceTable::root>::create(file_path, DEFAULT_LAYOUT, PMEMOBJ_MIN_POOL);		
-		
-		pobj::transaction::run(pop, [&]{
-			r->root_piece_table = pobj::make_persistent<PieceTable::piece_table>();
-			(r->root_piece_table)->cursor_pt = pobj::make_persistent<PieceTable::cursor>(0);
-		});
-	}
-	else {
-		pop = pmem::obj::pool<PieceTable::root>::open(file_path, DEFAULT_LAYOUT);
-	}
+	pobj::transaction::run(pop, [&]{
+		r->root_piece_table = pobj::make_persistent<PieceTable::piece_table>();
+	});
 
 	ptable = r->root_piece_table;
 	c = ptable->cursor_pt;
@@ -39,11 +31,13 @@ void PieceTable::create(pobj::pool<PieceTable::root> pop, string file_path) {
 		stringstream strStream;
 		strStream << in_file.rdbuf();
 		
-		ptable->original = strStream.str();
+		auto t1 = pmem::obj::make_persistent<string_type>(strStream.str().c_str(), strlen(strStream.str().c_str()));
+		ptable->original = t1;
+		// ptable->original = strStream.str();
 
 		p->src = ORIGINAL;
 		p->start = 0;
-		p->len = ptable->original.length();
+		p->len = ptable->original->size();
 		pvector.push_back(*p);
 
 		c->pos = 0;
@@ -70,11 +64,11 @@ string PieceTable::stitch(pobj::pool<PieceTable::root> pop) {
 			p = &pvector[i];
 			assert(p);
 			if (p->src == PieceTable::ORIGINAL) {
-				ret.append(ptable->original.c_str(), p->start, p->len);
+				ret.append(ptable->original->c_str(), p->start, p->len);
 			} 
 			else {
 				assert(p->src == PieceTable::ADD);
-				ret.append(ptable->add.c_str(), p->start, p->len);
+				ret.append(ptable->add->c_str(), p->start, p->len);
 			}
 		}
 	});
@@ -101,25 +95,25 @@ void PieceTable::insert(pobj::pool<PieceTable::root> pop, string s) {
 			return;
 		}
 		p->src = PieceTable::ADD;
-		p->start = ptable->add.length();
+		p->start = ptable->add->size();
 		p->len = s.length();
 
 		// Next we place the string into the add buffer
-		ptable->add.append(s);
+		ptable->add->append(s);
 		
 		c = ptable->cursor_pt;
 		piece = &pvector[c->piece_idx];
 
 		if (c->piece_offset == 0) {
 			// Need to insert the piece before cursor piece
-			pvector.insert(pvector.begin() + c->piece_idx, p);
+			// pvector.insert(pvector.begin() + c->piece_idx, p);
 			c->pos += p->len;
 			c->piece_idx++;
 		} 
 		else if (c->piece_offset == piece->len - 1) {
 			// Need to insert the piece after cursor piece
 			c->piece_idx++;
-			pvector.insert(pvector.begin() + c->piece_idx, p);
+			// pvector.insert(pvector.begin() + c->piece_idx, p);
 			c->pos += piece->len;
 		} 
 		else {
@@ -132,8 +126,8 @@ void PieceTable::insert(pobj::pool<PieceTable::root> pop, string s) {
 			piece->len = c->piece_offset;
 			c->piece_idx++;
 			c->pos += p->len;
-			pvector.insert(pvector.begin() + c->piece_idx, post);
-			pvector.insert(pvector.begin() + c->piece_idx, p);
+			// pvector.insert(pvector.begin() + c->piece_idx, post);
+			// pvector.insert(pvector.begin() + c->piece_idx, p);
 			c->piece_idx++;
 			c->piece_offset = 0;
 		}
@@ -197,7 +191,7 @@ void PieceTable::remove(pobj::pool<PieceTable::root> pop, size_t len) {
 						bytes_to_remove = 0;
 						c->piece_idx++;
 						c->piece_offset = 0;
-						pvector.insert(pvector.begin()+c->piece_idx, post);
+						// pvector.insert(pvector.begin()+c->piece_idx, post);
 					}
 				}
 			}
@@ -335,19 +329,19 @@ void PieceTable::print_table(pobj::pool<PieceTable::root> pop) {
 		for (size_t i = 0; i < pvector.size(); i++) {
 			piece = &pvector[i];
 			if (piece->src == PieceTable::ORIGINAL) {
-				c = ptable->original.at( piece->start);
+				c = ptable->original->at( piece->start);
 			} 
 			else {
-				c = ptable->add.at(piece->start);
+				c = ptable->add->at(piece->start);
 			}
 			cout << "\tP[" << i << "]:={" << piece->src << ", start=" << piece->start << ", len=" << piece->len << ", c="<< c<<"}\n";
 		}
 		PieceTable::print_cursor(pop);
 		piece = &pvector[ptable->cursor_pt->piece_idx];
 		if (piece->src == PieceTable::ORIGINAL) {
-			c = ptable->original.at(piece->start + ptable->cursor_pt->piece_offset);
+			c = ptable->original->at(piece->start + ptable->cursor_pt->piece_offset);
 		} else {
-			c = ptable->add.at(piece->start + ptable->cursor_pt->piece_offset);
+			c = ptable->add->at(piece->start + ptable->cursor_pt->piece_offset);
 		}
 
 		cout << "Char at cursor =" << c << "\n"; 

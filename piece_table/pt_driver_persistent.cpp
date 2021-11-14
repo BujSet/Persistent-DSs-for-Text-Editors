@@ -8,23 +8,31 @@ using namespace std;
 
 int main (int argc, char *argv[]) {
 	pobj::pool<PieceTable::root> pop;
-	auto r = pop.root();
 	int ip;
-	string fileName, insertStr;
+	string file_path, insert_str;
 
 	while(1){
 		printf("1-> Create piece table\t2-> Insert\t3-> Seek\t4-> Remove\t5-> Rewind\n");
 		cin>>ip;
 
 		if(ip == 1){
-			cout<<"Enter file name: ";
-			cin>>fileName;
-			PieceTable::create(pop, fileName);
+			// cout<<"Enter file name: ";
+			// cin>>file_path;
+			file_path = "test";
+
+			if (access(file_path.c_str(), F_OK) != 0) {
+				pop = pmem::obj::pool<PieceTable::root>::create(file_path, DEFAULT_LAYOUT, PMEMOBJ_MIN_POOL);				
+			}
+			else {
+				pop = pmem::obj::pool<PieceTable::root>::open(file_path, DEFAULT_LAYOUT);
+			}
+
+			PieceTable::create(pop, file_path);
 		}
 		else if(ip == 2){
 			cout<<"Enter string to be inserted: ";
-			cin>>insertStr;
-			PieceTable::insert(pop, insertStr);
+			cin>>insert_str;
+			PieceTable::insert(pop, insert_str);
 		}
 		else if(ip == 3){
 			PieceTable::seek(pop, 0, PieceTable::FWD);
