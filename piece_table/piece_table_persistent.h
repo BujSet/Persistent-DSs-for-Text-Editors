@@ -25,9 +25,12 @@ namespace PieceTable {
 
 	using string_type = pobj::string;
 
-	typedef struct cursor_t {
-		cursor_t(int posarg) {
+	typedef struct cursor {
+		cursor(int posarg) {
 			pos = posarg;
+		}
+
+		cursor(){			
 		}
 
 		pobj::p<size_t> pos;
@@ -42,7 +45,7 @@ namespace PieceTable {
 	} piece;
 	using piece_vector_type = pobj::vector<piece>;
 
-	typedef struct piece_table_t {
+	typedef struct piece_table {
     	string_type original;
 		string_type add;
 		pobj::persistent_ptr<piece_vector_type> pieces;
@@ -64,7 +67,7 @@ namespace PieceTable {
 
 	int get_cursor_pos(pobj::pool<PieceTable::root> pop);
 
-	void print_cursor(pobj::pool<PieceTable::cursor> c);
+	void print_cursor(pobj::pool<PieceTable::root> pop);
 
 	void seek(pobj::pool<PieceTable::root> pop, size_t offset, SeekDir dir);
 

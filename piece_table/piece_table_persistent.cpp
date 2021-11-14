@@ -14,23 +14,28 @@ void PieceTable::create(pobj::pool<PieceTable::root> pop, string file_path) {
 	pobj::persistent_ptr<piece_table> ptable;
 	pobj::persistent_ptr<piece> p;
 	pobj::persistent_ptr<cursor> c;
+	ifstream in_file;		
 
-	if (access(fileName, F_OK) != 0) {
-		pop = pmem::obj::pool<PieceTable::root>::create(fileName, DEFAULT_LAYOUT, PMEMOBJ_MIN_POOL);		
+	if (access(file_path.c_str(), F_OK) != 0) {
+		pop = pmem::obj::pool<PieceTable::root>::create(file_path, DEFAULT_LAYOUT, PMEMOBJ_MIN_POOL);		
 		
 		pobj::transaction::run(pop, [&]{
-			r->root_piece_table = pobj::make_persistent<PieceTable::pieceTable>();
+			r->root_piece_table = pobj::make_persistent<PieceTable::piece_table>();
 			(r->root_piece_table)->cursor_pt = pobj::make_persistent<PieceTable::cursor>(0);
 		});
 	}
 	else {
-		pop = pmem::obj::pool<PieceTable::root>::open(fileName, DEFAULT_LAYOUT);
+		pop = pmem::obj::pool<PieceTable::root>::open(file_path, DEFAULT_LAYOUT);
 	}
+
 	ptable = r->root_piece_table;
+	c = ptable->cursor_pt;
+	PieceTable::piece_vector_type &pvector = *(ptable->pieces);
 
 	pobj::transaction::run(pop, [&]{
 		p = pobj::make_persistent<PieceTable::piece>();
 
+		in_file.open(file_path);
 		stringstream strStream;
 		strStream << in_file.rdbuf();
 		
@@ -39,33 +44,37 @@ void PieceTable::create(pobj::pool<PieceTable::root> pop, string file_path) {
 		p->src = ORIGINAL;
 		p->start = 0;
 		p->len = ptable->original.length();
-		ptable->pieces.push_back(p);
+		pvector.push_back(*p);
 
 		c->pos = 0;
 		c->piece_idx = 0;
 		c->piece_offset = 0;
-		ptable->cursor = c;
+		ptable->cursor_pt = c;
 	});
 }
 
 string PieceTable::stitch(pobj::pool<PieceTable::root> pop) {
-	if (pop->root_piece_table == NULL) {
+	auto r = pop.root();
+	if (r->root_piece_table == NULL) {
 		cout << "Unable to read null piece table!\n";
 		return "";
 	}
 
-	auto r = pop.root();
 	pobj::persistent_ptr<piece_table> ptable = r->root_piece_table;
+	pobj::persistent_ptr<piece> p;
+	PieceTable::piece_vector_type &pvector = *(ptable->pieces);
 	string ret;
 
 	pobj::transaction::run(pop, [&]{
-		for (const auto& P: ptable->pieces) {
-			assert(P);
+		for (int i = 0; i < pvector.size(); i++) {
+			p = &pvector[i];
+			assert(p);
 			if (p->src == PieceTable::ORIGINAL) {
-				ret.append(ptable->original, p->start, p->len);
-			} else {
+				ret.append(ptable->original.c_str(), p->start, p->len);
+			} 
+			else {
 				assert(p->src == PieceTable::ADD);
-				ret.append(ptable->add, p->start, p->len);
+				ret.append(ptable->add.c_str(), p->start, p->len);
 			}
 		}
 	});
@@ -73,15 +82,16 @@ string PieceTable::stitch(pobj::pool<PieceTable::root> pop) {
 }
 
 void PieceTable::insert(pobj::pool<PieceTable::root> pop, string s) {
-	if (pop->root_piece_table == NULL) {
+	auto r = pop.root();
+	if (r->root_piece_table == NULL) {
 		cout << "Unable to read null piece table!\n";
 		return;
 	}
-
-	auto r = pop.root();
+	
 	pobj::persistent_ptr<piece_table> ptable = r->root_piece_table;
 	pobj::persistent_ptr<piece> p, piece, post;
 	pobj::persistent_ptr<cursor> c;
+	PieceTable::piece_vector_type &pvector = *(ptable->pieces);
 
 	pobj::transaction::run(pop, [&]{
 		// First we create a piece to represent this addition
@@ -97,19 +107,19 @@ void PieceTable::insert(pobj::pool<PieceTable::root> pop, string s) {
 		// Next we place the string into the add buffer
 		ptable->add.append(s);
 		
-		c = ptable->cursor;
-		piece = ptable->pieces[c->piece_idx];
+		c = ptable->cursor_pt;
+		piece = &pvector[c->piece_idx];
 
 		if (c->piece_offset == 0) {
 			// Need to insert the piece before cursor piece
-			ptable->pieces.insert(ptable->pieces.begin() + c->piece_idx, p);
+			pvector.insert(pvector.begin() + c->piece_idx, p);
 			c->pos += p->len;
 			c->piece_idx++;
 		} 
 		else if (c->piece_offset == piece->len - 1) {
 			// Need to insert the piece after cursor piece
 			c->piece_idx++;
-			ptable->pieces.insert(ptable->pieces.begin() + c->piece_idx, p);
+			pvector.insert(pvector.begin() + c->piece_idx, p);
 			c->pos += piece->len;
 		} 
 		else {
@@ -122,8 +132,8 @@ void PieceTable::insert(pobj::pool<PieceTable::root> pop, string s) {
 			piece->len = c->piece_offset;
 			c->piece_idx++;
 			c->pos += p->len;
-			ptable->pieces.insert(ptable->pieces.begin() + c->piece_idx, post);
-			ptable->pieces.insert(ptable->pieces.begin() + c->piece_idx, p);
+			pvector.insert(pvector.begin() + c->piece_idx, post);
+			pvector.insert(pvector.begin() + c->piece_idx, p);
 			c->piece_idx++;
 			c->piece_offset = 0;
 		}
@@ -132,7 +142,8 @@ void PieceTable::insert(pobj::pool<PieceTable::root> pop, string s) {
 }
 
 void PieceTable::remove(pobj::pool<PieceTable::root> pop, size_t len) {
-	if (pop->root_piece_table == NULL) {
+	auto r = pop.root();
+	if (r->root_piece_table == NULL) {
 		cout << "Unable to read null piece table!\n";
 		return;
 	}
@@ -141,23 +152,23 @@ void PieceTable::remove(pobj::pool<PieceTable::root> pop, size_t len) {
 		return;
 	}
 
-	auto r = pop.root();
 	pobj::persistent_ptr<piece_table> ptable = r->root_piece_table;
-	pobj::persistent_ptr<piece> piece;
+	pobj::persistent_ptr<piece> piece, post;
 	pobj::persistent_ptr<cursor> c;
+	PieceTable::piece_vector_type &pvector = *(ptable->pieces);
 
 	pobj::transaction::run(pop, [&]{
 		size_t bytes_to_remove = len;
 
 		while (bytes_to_remove) {
-			c = ptable->cursor;
-			piece = ptable->pieces[c->piece_idx];
+			c = ptable->cursor_pt;
+			piece = &pvector[c->piece_idx];
 
 			if (c->piece_offset == 0) {
 				if (bytes_to_remove >= piece->len) {
 					bytes_to_remove -= piece->len;
-					ptable->pieces.erase(ptable->pieces.begin() + c->piece_idx);
-					free(piece);
+					pvector.erase(pvector.begin() + c->piece_idx);
+					pobj::delete_persistent<PieceTable::piece>(piece);
 				} else {
 					piece->start += bytes_to_remove; 
 					piece->len -= bytes_to_remove;
@@ -186,7 +197,7 @@ void PieceTable::remove(pobj::pool<PieceTable::root> pop, size_t len) {
 						bytes_to_remove = 0;
 						c->piece_idx++;
 						c->piece_offset = 0;
-						ptable->pieces.insert(ptable->pieces.begin()+c->piece_idx, post);
+						pvector.insert(pvector.begin()+c->piece_idx, post);
 					}
 				}
 			}
@@ -195,42 +206,47 @@ void PieceTable::remove(pobj::pool<PieceTable::root> pop, size_t len) {
 }
 
 int PieceTable::get_cursor_pos(pobj::pool<PieceTable::root> pop) {
-	if (pop->root_piece_table == NULL) {
+	auto r = pop.root();
+	if (r->root_piece_table == NULL) {
 		cout << "Cannot find cursor on a null table\n";
-		return;
+		return 0;
 	}
-	return (pop->root_piece_table)->cursor->pos;
+	return (r->root_piece_table)->cursor_pt->pos;
 }
 
-void PieceTable::print_cursor(pobj::pool<PieceTable::cursor> c) {
-	if (!c) {
-		cout << "Cannot print null cursor\n";
-		return;
-	}
-	cout << "Cursor:={pos=" << c->pos << ", piece_idx=" << c->piece_idx << ", piece_offset=" << c->piece_offset << "}\n";
+void PieceTable::print_cursor(pobj::pool<PieceTable::root> pop) {
+	auto r = pop.root();
+	pobj::persistent_ptr<piece_table> ptable = r->root_piece_table;
+	pobj::persistent_ptr<cursor> c = ptable->cursor_pt;
+
+	pobj::transaction::run(pop, [&]{
+		cout << "Cursor:={pos=" << c->pos << ", piece_idx=" << c->piece_idx << ", piece_offset=" 
+		<< c->piece_offset << "}\n";
+	});
 }
 
-void PieceTable::seek(PieceTable::PT *T, size_t offset, PieceTable::SeekDir dir) {
+void PieceTable::seek(pobj::pool<PieceTable::root> pop, size_t offset, PieceTable::SeekDir dir) {
 	if (offset == 0) {
 		return;
 	}
 
-	if (pop->root_piece_table == NULL) {
+	auto r = pop.root();
+	if (r->root_piece_table == NULL) {
 		cout << "Cannot move cursor on null piece table!\n";
 		return;
 	}
-	
-	auto r = pop.root();
+
 	pobj::persistent_ptr<piece_table> ptable = r->root_piece_table;
 	pobj::persistent_ptr<piece> piece;
-	pobj::persistent_ptr<cursor> c = ptable->cursor;
+	pobj::persistent_ptr<cursor> c = ptable->cursor_pt;
+	PieceTable::piece_vector_type &pvector = *(ptable->pieces);
 
 	pobj::transaction::run(pop, [&]{
 		size_t bytes_moved = 0, bytes_to_move;
 
 		while (bytes_moved < offset) {
 			bytes_to_move = offset - bytes_moved;
-			piece = ptable->pieces[c->piece_idx];
+			piece = &pvector[c->piece_idx];
 			if (dir==PieceTable::FWD) {
 				if ((piece->len - c->piece_offset) > bytes_to_move) {
 					c->pos += bytes_to_move;
@@ -254,36 +270,37 @@ void PieceTable::seek(PieceTable::PT *T, size_t offset, PieceTable::SeekDir dir)
 				c->pos -= c->piece_offset;
 				c->piece_idx--;
 				bytes_moved += c->piece_offset;
-				c->piece_offset = ptable->pieces[c->piece_idx]->len;
+				c->piece_offset = pvector[c->piece_idx].len;
 			}
 		}	
 	});
 }
 
 void PieceTable::rewind(pobj::pool<PieceTable::root> pop) {
-	if (pop->root_piece_table == NULL) {
+	auto r = pop.root();
+	if (r->root_piece_table == NULL) {
 		cout << "Unbale to get character from null piece table\n";
 		return;
 	}
 
-	auto r = pop.root();
 	pobj::persistent_ptr<piece_table> ptable = r->root_piece_table;
 
-	ptable->cursor->pos = 0;
-	ptable->cursor->piece_idx = 0;
-	ptable->cursor->piece_offset = 0;
+	ptable->cursor_pt->pos = 0;
+	ptable->cursor_pt->piece_idx = 0;
+	ptable->cursor_pt->piece_offset = 0;
 }
 
 void PieceTable::close(pobj::pool<PieceTable::root> pop, string file_path) {
-	if (pop->root_piece_table == NULL) {
+	auto r = pop.root();
+	if (r->root_piece_table == NULL) {
 		cout << "Unable to close null piece table!\n";
 		return;
 	}
 
-	auto r = pop.root();
 	pobj::persistent_ptr<piece_table> ptable = r->root_piece_table;
 	pobj::persistent_ptr<piece> piece;
-	pobj::persistent_ptr<cursor> c = ptable->cursor;
+	pobj::persistent_ptr<cursor> c = ptable->cursor_pt;
+	PieceTable::piece_vector_type &pvector = *(ptable->pieces);
 
 	string text = PieceTable::stitch(pop);
 	ofstream out_file;
@@ -292,30 +309,31 @@ void PieceTable::close(pobj::pool<PieceTable::root> pop, string file_path) {
 	out_file.close();
 
 	pobj::transaction::run(pop, [&]{
-		for (int i = 0; i < ptable->pieces.size(); i++) {
-			pobj::delete_persistent<PieceTable::piece>(ptable->pieces[i]);
+		for (int i = 0; i < pvector.size(); i++) {
+			pobj::delete_persistent<PieceTable::piece>(&pvector[i]);
 
 		}
-		pobj::delete_persistent<PieceTable::cursor>(ptable->cursor);
+		pobj::delete_persistent<PieceTable::cursor>(ptable->cursor_pt);
 	});
 }
 
 void PieceTable::print_table(pobj::pool<PieceTable::root> pop) {
-	if (pop->root_piece_table == NULL) {
+	auto r = pop.root();
+	if (r->root_piece_table == NULL) {
 		cout << "unable to print null piece table\n";
 		return;
 	}
 
-	auto r = pop.root();
 	pobj::persistent_ptr<piece_table> ptable = r->root_piece_table;
 	pobj::persistent_ptr<piece> piece;
+	PieceTable::piece_vector_type &pvector = *(ptable->pieces);
 	char c;
 
 	pobj::transaction::run(pop, [&]{
 		cout << "/---------- Printing piece table -----------\\\n";
 
-		for (size_t i = 0; i < ptable->pieces.size(); i++) {
-			piece = ptable->pieces[i];
+		for (size_t i = 0; i < pvector.size(); i++) {
+			piece = &pvector[i];
 			if (piece->src == PieceTable::ORIGINAL) {
 				c = ptable->original.at( piece->start);
 			} 
@@ -324,12 +342,12 @@ void PieceTable::print_table(pobj::pool<PieceTable::root> pop) {
 			}
 			cout << "\tP[" << i << "]:={" << piece->src << ", start=" << piece->start << ", len=" << piece->len << ", c="<< c<<"}\n";
 		}
-		PieceTable::print_cursor(ptable->cursor);
-		piece = ptable->pieces[ptable->cursor->piece_idx];
+		PieceTable::print_cursor(pop);
+		piece = &pvector[ptable->cursor_pt->piece_idx];
 		if (piece->src == PieceTable::ORIGINAL) {
-			c = ptable->original.at(piece->start + ptable->cursor->piece_offset);
+			c = ptable->original.at(piece->start + ptable->cursor_pt->piece_offset);
 		} else {
-			c = ptable->add.at(piece->start + ptable->cursor->piece_offset);
+			c = ptable->add.at(piece->start + ptable->cursor_pt->piece_offset);
 		}
 
 		cout << "Char at cursor =" << c << "\n"; 
