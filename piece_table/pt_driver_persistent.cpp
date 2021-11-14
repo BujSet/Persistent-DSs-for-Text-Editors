@@ -16,16 +16,19 @@ int main (int argc, char *argv[]) {
 		cin>>ip;
 
 		if(ip == 1){
-			// cout<<"Enter file name: ";
-			// cin>>file_path;
-			file_path = "test";
+			cout<<"Enter file name: ";
+			cin>>file_path;
 
-			if (access(file_path.c_str(), F_OK) != 0) {
-				pop = pmem::obj::pool<PieceTable::root>::create(file_path, DEFAULT_LAYOUT, PMEMOBJ_MIN_POOL);				
+			if (access((file_path + "_pers").c_str(), F_OK) != 0) {
+				pop = pmem::obj::pool<PieceTable::root>::create(file_path + "_pers", DEFAULT_LAYOUT, PMEMOBJ_MIN_POOL);				
 			}
 			else {
-				pop = pmem::obj::pool<PieceTable::root>::open(file_path, DEFAULT_LAYOUT);
+				pop = pmem::obj::pool<PieceTable::root>::open(file_path + "_pers", DEFAULT_LAYOUT);
 			}
+
+			pobj::transaction::run(pop, [&]{
+				(pop.root())->root_piece_table = pobj::make_persistent<PieceTable::piece_table>();				
+			});
 
 			PieceTable::create(pop, file_path);
 		}

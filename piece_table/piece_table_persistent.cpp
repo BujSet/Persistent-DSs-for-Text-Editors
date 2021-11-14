@@ -11,35 +11,29 @@ using namespace std;
 
 void PieceTable::create(pobj::pool<PieceTable::root> pop, string file_path) {
 	auto r = pop.root();
-	pobj::persistent_ptr<piece_table> ptable;
-	pobj::persistent_ptr<piece> p;
-	pobj::persistent_ptr<cursor> c;
-	ifstream in_file;		
+	pobj::persistent_ptr<PieceTable::piece_table> ptable;
+	PieceTable::piece p;
+	pobj::persistent_ptr<PieceTable::cursor> c;
+	ifstream in_file;
 
 	pobj::transaction::run(pop, [&]{
-		r->root_piece_table = pobj::make_persistent<PieceTable::piece_table>();
-	});
-
-	ptable = r->root_piece_table;
-	c = ptable->cursor_pt;
-	PieceTable::piece_vector_type &pvector = *(ptable->pieces);
-
-	pobj::transaction::run(pop, [&]{
-		p = pobj::make_persistent<PieceTable::piece>();
+		ptable = r->root_piece_table;
+		PieceTable::piece_vector_type &pvector = *(ptable->pieces);
 
 		in_file.open(file_path);
 		stringstream strStream;
 		strStream << in_file.rdbuf();
 		
-		auto t1 = pmem::obj::make_persistent<string_type>(strStream.str().c_str(), strlen(strStream.str().c_str()));
+		cout<<strStream.str();
+		auto t1 = pobj::make_persistent<string_type>(strStream.str().c_str(), strlen(strStream.str().c_str())+10);
 		ptable->original = t1;
-		// ptable->original = strStream.str();
 
-		p->src = ORIGINAL;
-		p->start = 0;
-		p->len = ptable->original->size();
-		pvector.push_back(*p);
+		p.src = ORIGINAL;
+		p.start = 0;
+		p.len = ptable->original->size();
+		pvector.push_back(p);
 
+		c = pobj::make_persistent<PieceTable::cursor>();
 		c->pos = 0;
 		c->piece_idx = 0;
 		c->piece_offset = 0;
@@ -54,12 +48,13 @@ string PieceTable::stitch(pobj::pool<PieceTable::root> pop) {
 		return "";
 	}
 
-	pobj::persistent_ptr<piece_table> ptable = r->root_piece_table;
-	pobj::persistent_ptr<piece> p;
-	PieceTable::piece_vector_type &pvector = *(ptable->pieces);
+	pobj::persistent_ptr<PieceTable::piece_table> ptable = r->root_piece_table;
+	pobj::persistent_ptr<PieceTable::piece> p;	
 	string ret;
 
 	pobj::transaction::run(pop, [&]{
+		PieceTable::piece_vector_type &pvector = *(ptable->pieces);
+
 		for (int i = 0; i < pvector.size(); i++) {
 			p = &pvector[i];
 			assert(p);
@@ -82,12 +77,13 @@ void PieceTable::insert(pobj::pool<PieceTable::root> pop, string s) {
 		return;
 	}
 	
-	pobj::persistent_ptr<piece_table> ptable = r->root_piece_table;
-	pobj::persistent_ptr<piece> p, piece, post;
-	pobj::persistent_ptr<cursor> c;
-	PieceTable::piece_vector_type &pvector = *(ptable->pieces);
+	pobj::persistent_ptr<PieceTable::piece_table> ptable = r->root_piece_table;
+	pobj::persistent_ptr<PieceTable::piece> p, piece, post;
+	pobj::persistent_ptr<PieceTable::cursor> c;	
 
 	pobj::transaction::run(pop, [&]{
+		PieceTable::piece_vector_type &pvector = *(ptable->pieces);
+
 		// First we create a piece to represent this addition
 		p = pobj::make_persistent<PieceTable::piece>();
 		if (!p) {
@@ -146,13 +142,13 @@ void PieceTable::remove(pobj::pool<PieceTable::root> pop, size_t len) {
 		return;
 	}
 
-	pobj::persistent_ptr<piece_table> ptable = r->root_piece_table;
-	pobj::persistent_ptr<piece> piece, post;
-	pobj::persistent_ptr<cursor> c;
-	PieceTable::piece_vector_type &pvector = *(ptable->pieces);
+	pobj::persistent_ptr<PieceTable::piece_table> ptable = r->root_piece_table;
+	pobj::persistent_ptr<PieceTable::piece> piece, post;
+	pobj::persistent_ptr<PieceTable::cursor> c;
 
 	pobj::transaction::run(pop, [&]{
 		size_t bytes_to_remove = len;
+		PieceTable::piece_vector_type &pvector = *(ptable->pieces);
 
 		while (bytes_to_remove) {
 			c = ptable->cursor_pt;
@@ -210,8 +206,8 @@ int PieceTable::get_cursor_pos(pobj::pool<PieceTable::root> pop) {
 
 void PieceTable::print_cursor(pobj::pool<PieceTable::root> pop) {
 	auto r = pop.root();
-	pobj::persistent_ptr<piece_table> ptable = r->root_piece_table;
-	pobj::persistent_ptr<cursor> c = ptable->cursor_pt;
+	pobj::persistent_ptr<PieceTable::piece_table> ptable = r->root_piece_table;
+	pobj::persistent_ptr<PieceTable::cursor> c = ptable->cursor_pt;
 
 	pobj::transaction::run(pop, [&]{
 		cout << "Cursor:={pos=" << c->pos << ", piece_idx=" << c->piece_idx << ", piece_offset=" 
@@ -230,13 +226,13 @@ void PieceTable::seek(pobj::pool<PieceTable::root> pop, size_t offset, PieceTabl
 		return;
 	}
 
-	pobj::persistent_ptr<piece_table> ptable = r->root_piece_table;
-	pobj::persistent_ptr<piece> piece;
-	pobj::persistent_ptr<cursor> c = ptable->cursor_pt;
-	PieceTable::piece_vector_type &pvector = *(ptable->pieces);
-
+	pobj::persistent_ptr<PieceTable::piece_table> ptable = r->root_piece_table;
+	pobj::persistent_ptr<PieceTable::piece> piece;
+	pobj::persistent_ptr<PieceTable::cursor> c = ptable->cursor_pt;
+	
 	pobj::transaction::run(pop, [&]{
 		size_t bytes_moved = 0, bytes_to_move;
+		PieceTable::piece_vector_type &pvector = *(ptable->pieces);
 
 		while (bytes_moved < offset) {
 			bytes_to_move = offset - bytes_moved;
@@ -277,7 +273,7 @@ void PieceTable::rewind(pobj::pool<PieceTable::root> pop) {
 		return;
 	}
 
-	pobj::persistent_ptr<piece_table> ptable = r->root_piece_table;
+	pobj::persistent_ptr<PieceTable::piece_table> ptable = r->root_piece_table;
 
 	ptable->cursor_pt->pos = 0;
 	ptable->cursor_pt->piece_idx = 0;
@@ -291,10 +287,9 @@ void PieceTable::close(pobj::pool<PieceTable::root> pop, string file_path) {
 		return;
 	}
 
-	pobj::persistent_ptr<piece_table> ptable = r->root_piece_table;
-	pobj::persistent_ptr<piece> piece;
-	pobj::persistent_ptr<cursor> c = ptable->cursor_pt;
-	PieceTable::piece_vector_type &pvector = *(ptable->pieces);
+	pobj::persistent_ptr<PieceTable::piece_table> ptable = r->root_piece_table;
+	pobj::persistent_ptr<PieceTable::piece> piece;
+	pobj::persistent_ptr<PieceTable::cursor> c = ptable->cursor_pt;	
 
 	string text = PieceTable::stitch(pop);
 	ofstream out_file;
@@ -303,6 +298,8 @@ void PieceTable::close(pobj::pool<PieceTable::root> pop, string file_path) {
 	out_file.close();
 
 	pobj::transaction::run(pop, [&]{
+		PieceTable::piece_vector_type &pvector = *(ptable->pieces);
+
 		for (int i = 0; i < pvector.size(); i++) {
 			pobj::delete_persistent<PieceTable::piece>(&pvector[i]);
 
@@ -318,13 +315,13 @@ void PieceTable::print_table(pobj::pool<PieceTable::root> pop) {
 		return;
 	}
 
-	pobj::persistent_ptr<piece_table> ptable = r->root_piece_table;
-	pobj::persistent_ptr<piece> piece;
-	PieceTable::piece_vector_type &pvector = *(ptable->pieces);
+	pobj::persistent_ptr<PieceTable::piece_table> ptable = r->root_piece_table;
+	pobj::persistent_ptr<PieceTable::piece> piece;	
 	char c;
 
 	pobj::transaction::run(pop, [&]{
 		cout << "/---------- Printing piece table -----------\\\n";
+		PieceTable::piece_vector_type &pvector = *(ptable->pieces);
 
 		for (size_t i = 0; i < pvector.size(); i++) {
 			piece = &pvector[i];
