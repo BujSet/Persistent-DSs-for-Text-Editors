@@ -8,24 +8,24 @@ using namespace std;
 
 int main (int argc, char *argv[]) {
 	pobj::pool<PieceTable::root> pop;
-	int ip;
+	int ip, len_str, offset;
 	string file_path, insert_str;
 
+	// cout<<"Enter file name: ";
+	// cin>>file_path;
+	file_path = "eg.txt";
+	if (access((file_path + "_pers").c_str(), F_OK) != 0) {
+		pop = pmem::obj::pool<PieceTable::root>::create(file_path + "_pers", DEFAULT_LAYOUT, PMEMOBJ_MIN_POOL);				
+	}
+	else {
+		pop = pmem::obj::pool<PieceTable::root>::open(file_path + "_pers", DEFAULT_LAYOUT);
+	}
+
 	while(1){
-		printf("1-> Create piece table\t2-> Insert\t3-> Seek\t4-> Remove\t5-> Rewind\n");
+		printf("1-> Create piece table\t2-> Insert\t3-> Seek\t4-> Remove\t5-> Rewind\t6-> Print\n");
 		cin>>ip;
 
 		if(ip == 1){
-			cout<<"Enter file name: ";
-			cin>>file_path;
-
-			if (access((file_path + "_pers").c_str(), F_OK) != 0) {
-				pop = pmem::obj::pool<PieceTable::root>::create(file_path + "_pers", DEFAULT_LAYOUT, PMEMOBJ_MIN_POOL);				
-			}
-			else {
-				pop = pmem::obj::pool<PieceTable::root>::open(file_path + "_pers", DEFAULT_LAYOUT);
-			}
-
 			pobj::transaction::run(pop, [&]{
 				(pop.root())->root_piece_table = pobj::make_persistent<PieceTable::piece_table>();				
 			});
@@ -38,10 +38,14 @@ int main (int argc, char *argv[]) {
 			PieceTable::insert(pop, insert_str);
 		}
 		else if(ip == 3){
+			cout<<"Enter offset: ";
+			cin>>offset;
 			PieceTable::seek(pop, 0, PieceTable::FWD);
 		}
-		else if(ip == 4){			
-			PieceTable::remove(pop, 0);
+		else if(ip == 4){
+			cout<<"Enter length of string to be removed: ";
+			cin>>len_str;	
+			PieceTable::remove(pop, len_str);
 		}
 		else if(ip == 5){
 			PieceTable::rewind(pop);
