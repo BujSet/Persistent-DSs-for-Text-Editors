@@ -63,7 +63,7 @@ namespace PieceTable {
 
 	void insert(pobj::pool<PieceTable::root> pop, string s);
 
-	void remove(pobj::pool<PieceTable::root> pop, size_t len);
+	void remove(pobj::pool<PieceTable::root> pop, size_t bytes_to_remove);
 
 	int get_cursor_pos(pobj::pool<PieceTable::root> pop);
 

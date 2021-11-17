@@ -97,11 +97,11 @@ void PieceTable::insert(pobj::pool<PieceTable::root> pop, string s) {
 		p.len = s.size();
 
 		// Next we place the string into the add buffer
-		string s1 = (ptable->add->c_str() + s);
-		pobj::delete_persistent<string_type>(ptable->add);
-		auto t = pobj::make_persistent<string_type>(s1.c_str(), strlen(s1.c_str()));
-		ptable->add = t;
-		// ptable->add->append(s.c_str());
+		// string s1 = (ptable->add->c_str() + s);
+		// pobj::delete_persistent<string_type>(ptable->add);
+		// auto t = pobj::make_persistent<string_type>(s1.c_str(), strlen(s1.c_str()));
+		// ptable->add = t;
+		(ptable->add)->append(s.c_str());
 		
 		c = ptable->cursor_pt;
 		piece = pvector[c->piece_idx];
@@ -135,63 +135,69 @@ void PieceTable::insert(pobj::pool<PieceTable::root> pop, string s) {
 
 }
 
-void PieceTable::remove(pobj::pool<PieceTable::root> pop, size_t len) {
+void PieceTable::remove(pobj::pool<PieceTable::root> pop, size_t bytes_to_remove) {
 	auto r = pop.root();
 	if (r->root_piece_table == NULL) {
 		cout << "Unable to read null piece table!\n";
 		return;
 	}
-	if (len == 0) {
+	if (bytes_to_remove == 0) {
 		cout << "Nothing to remove!\n";
 		return;
 	}
 
 	pobj::persistent_ptr<PieceTable::piece_table> ptable = r->root_piece_table;
-	PieceTable::piece piece, post;
+	pobj::persistent_ptr<PieceTable::piece> piece, post; 
 	pobj::persistent_ptr<PieceTable::cursor> c;
 
 	pobj::transaction::run(pop, [&]{
-		size_t bytes_to_remove = len;
 		PieceTable::piece_vector_type &pvector = *(ptable->pieces);
 
 		while (bytes_to_remove) {
 			c = ptable->cursor_pt;
-			piece = pvector[c->piece_idx];
+			piece = &pvector[c->piece_idx];
 
 			if (c->piece_offset == 0) {
-				if (bytes_to_remove >= piece.len) {
-					bytes_to_remove -= piece.len;
+				if (bytes_to_remove >= piece->len) {
+					bytes_to_remove -= piece->len;
 					pvector.erase(pvector.begin() + c->piece_idx);
-					// pobj::delete_persistent<PieceTable::piece>(piece);
+					pobj::delete_persistent<PieceTable::piece>(piece);
+					c->piece_idx--;
+					c->piece_offset = 0;
+					if(c->piece_idx < 0){
+						cout<<"No more pieces left for cursor to move!\n";
+						break;
+					}
 				}
 				else {
-					piece.start += bytes_to_remove; 
-					piece.len -= bytes_to_remove;
+					piece->start += bytes_to_remove; 
+					piece->len -= bytes_to_remove;					
 					bytes_to_remove = 0;
 				}
 			} 
 			else { 
 				// Need to break up the cursor piece
-				if (bytes_to_remove > (piece.len - c->piece_offset)) {
-					bytes_to_remove -= (piece.len - c->piece_offset);
-					piece.len = c->piece_offset;
+				if (bytes_to_remove > (piece->len - c->piece_offset)) {
+					bytes_to_remove -= (piece->len - c->piece_offset);
+					piece->len = c->piece_offset;
 					c->piece_idx++;
 					c->piece_offset = 0;
 				} 
 				else {
-					if (bytes_to_remove == (piece.len - c->piece_offset)) {
-						piece.len -= bytes_to_remove;
+					if (bytes_to_remove == (piece->len - c->piece_offset)) {
+						piece->len -= bytes_to_remove;
 						bytes_to_remove = 0;
 					}
 					else {
-						post.src = piece.src;
-						post.start = piece.start + bytes_to_remove + c->piece_offset;
-						post.len = piece.len - post.start;
-						piece.len = c->piece_offset;
+						post = pobj::make_persistent<PieceTable::piece>();
+						post->src = piece->src;
+						post->start = piece->start + bytes_to_remove + c->piece_offset;
+						post->len = piece->len - post->start;
+						piece->len = c->piece_offset;
 						bytes_to_remove = 0;
 						c->piece_idx++;
 						c->piece_offset = 0;
-						pvector.insert(pvector.begin() + c->piece_idx, post);
+						pvector.insert(pvector.begin() + c->piece_idx, *post);
 					}
 				}
 			}
