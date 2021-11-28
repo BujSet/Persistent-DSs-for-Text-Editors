@@ -19,6 +19,17 @@ class GapBuffer {
             int gapRight = gapSize - gapLeft - 1;
             int size = 10;
 
+            GapBuffer() {
+                gapSize = 10;
+                gapLeft = 0;
+                gapRight = gapSize - gapLeft - 1;
+                size = 10;
+
+                for (int i = 0; i < size; i++) {
+                    buffer.push_back('_');
+                }
+            }
+
             /**
              *  This function moves is used to grow the gap 
              *  at index position and return the vector 
@@ -128,4 +139,46 @@ class GapBuffer {
                 buffer.at(gapLeft) = '_';
             }       
 
+};
+
+int main() { 
+
+    GapBuffer gapBuffer;    
+  
+    cout << "Initializing the gap buffer with size 10" << endl;
+   
+    for (int i = 0; i < 10; i++) { 
+        cout << gapBuffer.buffer.at(i) << " "; 
+    } 
+  
+    cout << endl; 
+  
+    // Inserting a string to buffer 
+    string input = "GEEKSGEEKS"; 
+    int position = 0; 
+  
+    gapBuffer.insert(input, position); 
+  
+    cout << endl; 
+    cout << "Inserting a string to buffer: GEEKSGEEKS" << endl; 
+    cout << "Output: "; 
+    for (int i = 0; i < gapBuffer.size; i++) { 
+        cout << gapBuffer.buffer[i]<<" "; 
+    } 
+  
+    input = "FOR"; 
+    position = 5; 
+  
+    gapBuffer.insert(input, position); 
+  
+    cout << endl; 
+    cout << endl; 
+      
+    cout << "Inserting a string to buffer: FOR" << endl; 
+    cout << "Output: "; 
+    for (int i = 0; i < gapBuffer.size; i++) { 
+        cout << gapBuffer.buffer[i]<<" "; 
+    }
+  
+    return 0;
 }
