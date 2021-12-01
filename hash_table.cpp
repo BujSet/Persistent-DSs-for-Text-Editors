@@ -7,8 +7,6 @@
 #include <libpmemobj++/pool.hpp>
 #include <libpmemobj++/container/string.hpp>
 
-#include<valgrind/pmemcheck.h>
-
 #include <cstdlib>
 #include <iostream>
 #include <string>
@@ -62,9 +60,7 @@ void createhtables(pmem::obj::pool<root> pop, int initcapacity){
 	int i;
 	std::cout<<"Hash table creation start!\n";
 	pmem::obj::transaction::run(pop, [&]{
-		VALGRIND_PMC_REGISTER_PMEM_MAPPING(&(r1->hashtable), sizeof(r1->hashtable));
 		r1->hashtable = pmem::obj::make_persistent<hash_table>(initcapacity,0);
-		VALGRIND_PMC_REMOVE_PMEM_MAPPING(&(r1->hashtable), sizeof(r1->hashtable));
 		r1->hashtable1 = pmem::obj::make_persistent<hash_table>(initcapacity,0);
 	});
 	pmem::obj::transaction::run(pop, [&]{		
@@ -316,9 +312,7 @@ void resize(pmem::obj::pool<root> pop){
 		htable1->entries = pmem::obj::make_persistent<vector_type>();
 		vector_type &pvector1 = *(htable1->entries);
 		char t[4];
-		VALGRIND_PMC_REGISTER_PMEM_MAPPING(&(t), sizeof(t));
-		strcpy(t,"--");
-		VALGRIND_PMC_REMOVE_PMEM_MAPPING(&(t), sizeof(t));					
+		strcpy(t,"--");				
 		for(i=0;i<newsize;i++){				
 			hentry.initentry(-1);
 			auto t1 = pmem::obj::make_persistent<string_type>(t, strlen(t));								
