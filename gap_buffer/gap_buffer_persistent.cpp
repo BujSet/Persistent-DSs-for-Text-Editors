@@ -33,14 +33,39 @@ void GapBuffer::create(pobj::pool<GapBuffer::root> pop, string file_path) {
 		auto temp = pobj::make_persistent<GapBuffer::char_vector_type>(strStream.str().c_str(), strlen(strStream.str().c_str()));
 		gBuffer->buffer = temp;
 
-        // TODO: Need to see how to calculate these values on the go {Iterate through the string or character vector?}
-        // gBuffer-> gap_size = 
-        // gBuffer-> gap_left = 
-        // gBuffer-> gap_right = 
-        
-        gBuffer-> size = gBuffer->buffer->size();
+        GapBuffer::initValues(gBuffer);
 
 	});
+}
+
+void GapBuffer::initValues(pobj::persistent_ptr<GapBuffer::gap_buffer> gBuffer) {
+    
+    gBuffer-> size = gBuffer->buffer->size();
+
+    cout << "Total Size: " << gBuffer-> size << endl;
+
+    int size = gBuffer->buffer->size();
+
+    int gap_left, gap_right, gap_size;
+    gap_left = gap_right = gap_size = 0
+
+    for (size_t i = 0; i < size; i++) {
+        if (gBuffer->buffer[i] == '_') {
+            if (gap_left = 0) {
+                gap_left = i;
+            } else {
+                gap_right = i;
+            }
+        }
+    }
+    gap_size = gap_right - gap_left + 1;
+
+    cout << "Gap Left: " << gap_left << " Gap Right: " << gap_right << " Gap Size: " << gap_size << endl;
+
+    gBuffer->left = gap_left;
+    gBuffer->right = gap_right;
+    gBuffer->size = gap_size;
+
 }
 
 /**

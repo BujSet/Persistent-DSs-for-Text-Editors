@@ -40,6 +40,8 @@ namespace GapBuffer {
 
 	void create(pobj::pool<GapBuffer::root> pop, string file_path);
 
+	void initValues(pobj::persistent_ptr<GapBuffer::gap_buffer> gBuffer);
+
 	void insert(pobj::pool<GapBuffer::root> pop, string input, int position);
 
 	void deleteCharacter(pobj::pool<GapBuffer::root> pop, int position);
