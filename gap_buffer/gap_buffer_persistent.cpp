@@ -1,11 +1,47 @@
 #include <iostream>
+#include <string>
+#include <fstream>
+#include <sstream>
+#include <assert.h>
 #include <vector>
 
 #include "gap_buffer_persistent.h"
 
 using namespace std;
 
-void GapBuffer::create(pobj::pool<GapBuffer::root> pop, string file_path);
+void GapBuffer::create(pobj::pool<GapBuffer::root> pop, string file_path) {
+    auto r = pop.root();
+	pobj::persistent_ptr<GapBuffer::gap_buffer> gBuffer;
+	ifstream in_file;
+
+	pobj::transaction::run(pop, [&] {
+        gBuffer = r->root_gap_buffer;	
+		// gBuffer->buffer = pobj::make_persistent<GapBuffer::char_vector_type>();
+    
+		GapBuffer::char_vector_type &cvector = *(gBuffer->buffer);
+
+		in_file.open(file_path);
+		
+		if(!in_file){
+		  	cout<<"Can't locate file!\n";
+			return;
+		}
+
+		stringstream strStream;
+		strStream << in_file.rdbuf();
+        // TODO: Need to decide if I want to add just the text in the buffer to the file or some metadata as well?
+		auto temp = pobj::make_persistent<GapBuffer::char_vector_type>(strStream.str().c_str(), strlen(strStream.str().c_str()));
+		gBuffer->buffer = temp;
+
+        // TODO: Need to see how to calculate these values on the go {Iterate through the string or character vector?}
+        // gBuffer-> gap_size = 
+        // gBuffer-> gap_left = 
+        // gBuffer-> gap_right = 
+        
+        gBuffer-> size = gBuffer->buffer->size();
+
+	});
+}
 
 /**
 *  This function inserts the 'input' string to the
@@ -99,7 +135,7 @@ void GapBuffer::moveCursor(pobj::pool<GapBuffer::root> pop, int position) {
 void GapBuffer::left(pobj::pool<GapBuffer::root> pop, int position) {
     auto r = pop.root();
 	if (r->root_gap_buffer == NULL) {
-		cout << "Cannot move right on null gap buffer!\n";
+		cout << "Cannot move left on null gap buffer!\n";
 		return;
 	}
 
@@ -124,7 +160,7 @@ void GapBuffer::left(pobj::pool<GapBuffer::root> pop, int position) {
 void GapBuffer::right(pobj::pool<GapBuffer::root> pop, int position) {
     auto r = pop.root();
 	if (r->root_gap_buffer == NULL) {
-		cout << "Cannot move left on null gap buffer!\n";
+		cout << "Cannot move right on null gap buffer!\n";
 		return;
 	}
 
@@ -186,7 +222,35 @@ void GapBuffer::grow(pobj::pool<GapBuffer::root> pop, int k, int position) {
 
 void GapBuffer::print_table(pobj::pool<GapBuffer::root> pop);
 
-void GapBuffer::close(pobj::pool<GapBuffer::root> pop, string file_path);
+void GapBuffer::close(pobj::pool<GapBuffer::root> pop, string file_path) {
+	auto r = pop.root();
+	
+    if (r->root_gap_buffer == NULL) {
+		cout << "Unable to close null gap buffer!\n";
+		return;
+	}
+
+	pobj::persistent_ptr<PieceTable::gap_buffer> gbuffer = r->root_gap_buffer;
+    
+    // string text = convert the vector of characters to a string;
+	ofstream out_file;
+	out_file.open(file_path);
+	// Write the string to the file.
+    // out_file << text;
+	out_file.close();
+
+	pobj::transaction::run(pop, [&]{
+        
+		/*
+            Check if need to delete something while closing?
+            PieceTable::piece_vector_type &pvector = *(ptable->pieces);
+
+            for (int i = 0; i < pvector.size(); i++) {
+                pobj::delete_persistent<PieceTable::piece>(&pvector[i]);
+            }
+        */
+	});
+}
 
 class GapBuffer2 {
 
