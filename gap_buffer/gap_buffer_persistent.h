@@ -20,31 +20,7 @@ namespace pobj = pmem::obj;
 #define DEFAULT_LAYOUT "DEFAULT_LAYOUT"
 
 namespace GapBuffer {
-	enum SourceBuffer {ORIGINAL, ADD};
-	enum SeekDir {FWD=1, BWD=-1};
 
-	/*
-	using string_type = pobj::string;
-
-	typedef struct cursor {
-		cursor(int posarg) {
-			pos = posarg;
-		}
-
-		cursor(){			
-		}
-
-		pobj::p<size_t> pos;
-		pobj::p<size_t> piece_idx;
-		pobj::p<size_t> piece_offset;
-	} cursor;
-
-	typedef struct piece {
-		pobj::p<SourceBuffer> src;
-		pobj::p<size_t> start;
-		pobj::p<size_t> len;
-	} piece;
-	*/
 	using char_vector_type = pobj::vector<char>;
 
 	typedef struct gap_buffer {
@@ -76,7 +52,7 @@ namespace GapBuffer {
 
 	void grow(pobj::pool<GapBuffer::root> pop, int k, int position); 
 
-	void print_table(pobj::pool<GapBuffer::root> pop);
+	void print_buffer(pobj::pool<GapBuffer::root> pop);
 
 	void close(pobj::pool<GapBuffer::root> pop, string file_path);
 }

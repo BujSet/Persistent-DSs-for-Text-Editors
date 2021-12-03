@@ -220,7 +220,38 @@ void GapBuffer::grow(pobj::pool<GapBuffer::root> pop, int k, int position) {
 
 } 
 
-void GapBuffer::print_table(pobj::pool<GapBuffer::root> pop);
+void GapBuffer::print_buffer(pobj::pool<GapBuffer::root> pop) {
+	
+    auto r = pop.root();
+	
+    if (r->root_gap_buffer == NULL) {
+		cout << "Unable to print null gap buffer\n";
+		return;
+	}
+
+	pobj::persistent_ptr<GapBuffer::gap_buffer> root_gap_buffer = r->root_gap_buffer;
+	PieceTable::piece piece;	
+	char c;
+
+	pobj::transaction::run(pop, [&]{
+		
+        cout << "<---------- Printing Gap Buffer ----------->\n";
+		GapBuffer::char_vector_type &char_vector = *(root_gap_buffer->buffer);
+
+		cout<<"ptable->original: "<<(ptable->original)->c_str()<<"\n";
+		cout<<"ptable->add: "<<(ptable->add)->c_str()<<"\n";
+		
+        for (size_t i = 0; i < char_vector.size(); i++) {
+            cout << "At position : " << i << " character: " << char_vector[i] << endl;
+		}
+
+        cout << "Gap Size: " << root_gap_buffer->gap_size << endl;
+        cout << "Gap Left: " << root_gap_buffer->gap_left << endl; 
+        cout << "Gap Right: " << root_gap_buffer->gap_right << endl;
+        cout << "Total Size: " << root_gap_buffer->size << endl;
+	});
+
+}
 
 void GapBuffer::close(pobj::pool<GapBuffer::root> pop, string file_path) {
 	auto r = pop.root();
@@ -251,30 +282,6 @@ void GapBuffer::close(pobj::pool<GapBuffer::root> pop, string file_path) {
         */
 	});
 }
-
-class GapBuffer2 {
-
-    public:
-            vector<char> buffer;
-            int gapSize = 10;
-            int gapLeft = 0;
-            int gapRight = gapSize - gapLeft - 1;
-            int size = 10;
-
-            GapBuffer() {
-                gapSize = 10;
-                gapLeft = 0;
-                gapRight = gapSize - gapLeft - 1;
-                size = 10;
-
-                for (int i = 0; i < size; i++) {
-                    buffer.push_back('_');
-                }
-            }
-
-                  
-
-};
 
 int main() { 
 
