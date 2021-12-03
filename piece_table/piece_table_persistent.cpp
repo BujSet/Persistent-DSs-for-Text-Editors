@@ -97,10 +97,6 @@ void PieceTable::insert(pobj::pool<PieceTable::root> pop, string s) {
 		p.len = s.size();
 
 		// Next we place the string into the add buffer
-		// string s1 = (ptable->add->c_str() + s);
-		// pobj::delete_persistent<string_type>(ptable->add);
-		// auto t = pobj::make_persistent<string_type>(s1.c_str(), strlen(s1.c_str()));
-		// ptable->add = t;
 		(ptable->add)->append(s.c_str());
 		
 		c = ptable->cursor_pt;

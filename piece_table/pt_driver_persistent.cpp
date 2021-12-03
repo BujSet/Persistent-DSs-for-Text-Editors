@@ -23,8 +23,8 @@ int main (int argc, char *argv[]) {
 	}
 
 	while(1){
-		cout<<"1-> Create piece table\t2-> Insert\t3-> SeekFwd\t4-> Remove\t5-> Rewind\t6-> Print\t";
-		cout<<"7-> Write to outfile\t8-> Quit\n";
+		cout<<"1-> Create piece table\t 2-> Insert\t 3-> SeekFwd\t 4-> SeekFwd\t 5-> Remove\t 6-> Rewind\n";
+		cout<<"7-> Print\t 8-> Write to outfile\t 9-> Quit\n";
 		cin>>ip;
 
 		if(ip == 1){
@@ -42,23 +42,28 @@ int main (int argc, char *argv[]) {
 		else if(ip == 3){
 			cout<<"Enter offset: ";
 			cin>>offset;
-			PieceTable::seek(pop, 0, PieceTable::FWD);
+			PieceTable::seek(pop, offset, PieceTable::FWD);
 		}
 		else if(ip == 4){
+			cout<<"Enter offset: ";
+			cin>>offset;
+			PieceTable::seek(pop, offset, PieceTable::BWD);
+		}
+		else if(ip == 5){
 			cout<<"Enter length of string to be removed: ";
 			cin>>len_str;	
 			PieceTable::remove(pop, len_str);
 		}
-		else if(ip == 5){
+		else if(ip == 6){
 			PieceTable::rewind(pop);
 		}
-		else if(ip == 6){
+		else if(ip == 7){
 			PieceTable::print_table(pop);
 		}
-		else if(ip == 7){
+		else if(ip == 8){
 			PieceTable::close(pop, out_path);
 		}
-		else if(ip == 8){
+		else if(ip == 9){
 			break;
 		}
 		else{
