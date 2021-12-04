@@ -43,7 +43,6 @@ void GapBuffer::create(pobj::pool<GapBuffer::root> pop, string file_path) {
 
 void GapBuffer::initValues(pobj::persistent_ptr<GapBuffer::gap_buffer> gBuffer) {
     
-    gBuffer-> size = gBuffer->buffer->size();
 
     cout << "Total Size: " << gBuffer-> size << endl;
 
@@ -80,6 +79,7 @@ void GapBuffer::initValues(pobj::persistent_ptr<GapBuffer::gap_buffer> gBuffer) 
     gBuffer->gap_left = gap_left;
     gBuffer->gap_right = gap_right;
     gBuffer->gap_size = gap_size;
+    gBuffer-> size = gBuffer->buffer->size();
 
 }
 
@@ -184,6 +184,9 @@ void GapBuffer::left(pobj::pool<GapBuffer::root> pop, int position) {
     GapBuffer::char_vector_type &char_vector = *(root_gap_buffer->buffer); 
     
     pobj::transaction::run(pop, [&]{
+
+        cout << "Inside left(), with position: " << position << " and gap_left: " 
+        << root_gap_buffer->gap_left << " and gap_right: " << root_gap_buffer->gap_right << endl;
         
         // Moves the gap left, character by character
         while (position < root_gap_buffer->gap_left) {
@@ -209,7 +212,9 @@ void GapBuffer::right(pobj::pool<GapBuffer::root> pop, int position) {
     pobj::persistent_ptr<GapBuffer::gap_buffer> root_gap_buffer = r->root_gap_buffer;
     GapBuffer::char_vector_type &char_vector = *(root_gap_buffer->buffer); 
     
-    pobj::transaction::run(pop, [&]{
+    pobj::transaction::run(pop, [&] {
+        cout << "Inside right(), with position: " << position << " and gap_left: " 
+        << root_gap_buffer->gap_left << " and gap_right: " << root_gap_buffer->gap_right << endl;
     
         // Moves the gap right, character by character
         while (position > root_gap_buffer->gap_left) {
@@ -240,7 +245,9 @@ void GapBuffer::grow(pobj::pool<GapBuffer::root> pop, int k, int position) {
     size_t size = root_gap_buffer->size; 
     std::vector<char> copy_vector(size);
 
-    pobj::transaction::run(pop, [&]{  
+    pobj::transaction::run(pop, [&]{ 
+
+        cout << " Let's see what is happening inside grow()\n"; 
 
         // The characters of the buffer after 'position' 
         // are copied to the copy array
@@ -254,10 +261,14 @@ void GapBuffer::grow(pobj::pool<GapBuffer::root> pop, int k, int position) {
             char_vector.insert(char_vector.begin() + i + position, '_');
         }
 
+        cout << "Size of vector<char>: " << char_vector.size() << endl;
+
         // The remaining array is inserted
         for (size_t i = 0; i < k + position; i++) {
-            char_vector.insert(char_vector.begin()+ position + i + k, copy_vector[i]);
+            char_vector[char_vector.begin()+ position + i + k] = copy_vector[i];
         }
+
+        cout << "Size of vector<char>: " << char_vector.size() << endl;
 
         root_gap_buffer->size += k;
         root_gap_buffer->gap_right += k;            				
