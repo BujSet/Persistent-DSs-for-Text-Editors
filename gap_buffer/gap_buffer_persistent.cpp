@@ -7,6 +7,8 @@
 
 #include "gap_buffer_persistent.h"
 
+#define DEFAULT_BUFFER_SIZE 10
+
 using namespace std;
 
 void GapBuffer::create(pobj::pool<GapBuffer::root> pop, string file_path) {
@@ -22,7 +24,7 @@ void GapBuffer::create(pobj::pool<GapBuffer::root> pop, string file_path) {
 
 		in_file.open(file_path);
 		
-		if(!in_file){
+		if(!in_file) {
 		  	cout<<"Can't locate file!\n";
 			return;
 		}
@@ -50,7 +52,7 @@ void GapBuffer::initValues(pobj::persistent_ptr<GapBuffer::gap_buffer> gBuffer) 
     GapBuffer::char_vector_type &char_vector = *(gBuffer->buffer);
 
     int gap_left, gap_right, gap_size;
-    gap_left = gap_right = gap_size = 0;
+    gap_left = gap_right = gap_size = -1;
 
     for (size_t i = 0; i < size; i++) {
         if (char_vector.at(i) == '_') {
@@ -61,13 +63,23 @@ void GapBuffer::initValues(pobj::persistent_ptr<GapBuffer::gap_buffer> gBuffer) 
             }
         }
     }
-    gap_size = gap_right - gap_left + 1;
+    gap_size = (gap_left != gap_right) ? gap_right - gap_left + 1 : 0;
+
+    if (gap_left == -1) {
+        //GapBuffer::grow(pop, k, position);
+        for (size_t i = 0; i < DEFAULT_BUFFER_SIZE; i++) {
+            char_vector.push_back('_');
+        }
+        gap_left = 0;
+        gap_right = DEFAULT_BUFFER_SIZE - 1;
+        gap_size = DEFAULT_BUFFER_SIZE; 
+    }
 
     cout << "Gap Left: " << gap_left << " Gap Right: " << gap_right << " Gap Size: " << gap_size << endl;
 
     gBuffer->gap_left = gap_left;
     gBuffer->gap_right = gap_right;
-    gBuffer->size = gap_size;
+    gBuffer->gap_size = gap_size;
 
 }
 
@@ -97,8 +109,7 @@ void GapBuffer::insert(pobj::pool<GapBuffer::root> pop, string input, int positi
 
             // If the gap is empty, we need to grow the gap
             if (root_gap_buffer->gap_right == root_gap_buffer->gap_left) {
-                int k = 10;
-                GapBuffer::grow(pop, k, position);
+                GapBuffer::grow(pop, DEFAULT_BUFFER_SIZE, position);
             }
 
             // Insert the character in the gap and move the gap
