@@ -31,7 +31,7 @@ void GapBuffer::create(pobj::pool<GapBuffer::root> pop, string file_path) {
 		strStream << in_file.rdbuf();
         string fileContents = strStream.str();
         vector<char> char_vector (fileContents.begin(), fileContents.end()); 
-        auto temp = pobj::make_persistent<GapBuffer::char_vector_type>(char_vector, char_vector.size());
+        auto temp = pobj::make_persistent<GapBuffer::char_vector_type>(char_vector);
 		gBuffer->buffer = temp;
 
         GapBuffer::initValues(gBuffer);
@@ -47,11 +47,13 @@ void GapBuffer::initValues(pobj::persistent_ptr<GapBuffer::gap_buffer> gBuffer) 
 
     int size = gBuffer->buffer->size();
 
+    GapBuffer::char_vector_type &char_vector = *(gBuffer->buffer);
+
     int gap_left, gap_right, gap_size;
-    gap_left = gap_right = gap_size = 0
+    gap_left = gap_right = gap_size = 0;
 
     for (size_t i = 0; i < size; i++) {
-        if (gBuffer->buffer[i] == '_') {
+        if (char_vector.at(i) == '_') {
             if (gap_left = 0) {
                 gap_left = i;
             } else {
@@ -63,8 +65,8 @@ void GapBuffer::initValues(pobj::persistent_ptr<GapBuffer::gap_buffer> gBuffer) 
 
     cout << "Gap Left: " << gap_left << " Gap Right: " << gap_right << " Gap Size: " << gap_size << endl;
 
-    gBuffer->left = gap_left;
-    gBuffer->right = gap_right;
+    gBuffer->gap_left = gap_left;
+    gBuffer->gap_right = gap_right;
     gBuffer->size = gap_size;
 
 }
@@ -81,26 +83,27 @@ void GapBuffer::insert(pobj::pool<GapBuffer::root> pop, string input, int positi
 		return;
 	}    
 
-    pobj::persistent_ptr<GapBuffer::gap_buffer> root_gap_buffer = r->root_gap_buffer;  
+    pobj::persistent_ptr<GapBuffer::gap_buffer> root_gap_buffer = r->root_gap_buffer;
+    GapBuffer::char_vector_type &char_vector = *(root_gap_buffer->buffer);  
     int i = 0, len = input.length();
 
     pobj::transaction::run(pop, [&]{
         
-        if (position != root_gap_buffer->gapLeft) {
+        if (position != root_gap_buffer->gap_left) {
             GapBuffer::moveCursor(pop, position);
         } 
 
         while (i < len) {
 
             // If the gap is empty, we need to grow the gap
-            if (root_gap_buffer->gapRight == root_gap_buffer->gapLeft) {
+            if (root_gap_buffer->gap_right == root_gap_buffer->gap_left) {
                 int k = 10;
                 GapBuffer::grow(pop, k, position);
             }
 
             // Insert the character in the gap and move the gap
-            root_gap_buffer->buffer.at(root_gap_buffer->gapLeft) = input[i];
-            root_gap_buffer->gapLeft++;
+            char_vector.at(root_gap_buffer->gap_left) = input[i];
+            root_gap_buffer->gap_left++;
             i++;
             position++;
         }  				
@@ -118,14 +121,15 @@ void GapBuffer::deleteCharacter(pobj::pool<GapBuffer::root> pop, int position) {
 	}    
 
     pobj::persistent_ptr<GapBuffer::gap_buffer> root_gap_buffer = r->root_gap_buffer;
+    GapBuffer::char_vector_type &char_vector = *(root_gap_buffer->buffer);  
 
     pobj::transaction::run(pop, [&]{
         
-        if (root_gap_buffer->gapLeft != position + 1) {
+        if (root_gap_buffer->gap_left != position + 1) {
             GapBuffer::moveCursor(pop, position + 1);
         }
-        root_gap_buffer->gapLeft--;
-        root_gap_buffer->buffer.at(root_gap_buffer->gapLeft) = '_';    				
+        root_gap_buffer->gap_left--;
+        char_vector.at(root_gap_buffer->gap_left) = '_';    				
 	}); 
 
 }
@@ -146,7 +150,7 @@ void GapBuffer::moveCursor(pobj::pool<GapBuffer::root> pop, int position) {
     
     pobj::transaction::run(pop, [&]{
         
-        if (position < root_gap_buffer->gapLeft) {
+        if (position < root_gap_buffer->gap_left) {
             GapBuffer::left(pop, position);
         } else {
             GapBuffer::right(pop, position);
@@ -166,15 +170,16 @@ void GapBuffer::left(pobj::pool<GapBuffer::root> pop, int position) {
 	}
 
     pobj::persistent_ptr<GapBuffer::gap_buffer> root_gap_buffer = r->root_gap_buffer;
+    GapBuffer::char_vector_type &char_vector = *(root_gap_buffer->buffer); 
     
     pobj::transaction::run(pop, [&]{
         
         // Moves the gap left, character by character
-        while (position < root_gap_buffer->gapLeft) {
-            root_gap_buffer->gapLeft--;
-            root_gap_buffer->gapRight--;
-            root_gap_buffer->buffer.at(root_gap_buffer->gapRight + 1) = root_gap_buffer->buffer[root_gap_buffer->gapLeft];
-            root_gap_buffer->buffer.at(root_gap_buffer->gapLeft) = '_';
+        while (position < root_gap_buffer->gap_left) {
+            root_gap_buffer->gap_left--;
+            root_gap_buffer->gap_right--;
+            char_vector.at(root_gap_buffer->gap_right + 1) = char_vector[root_gap_buffer->gap_left];
+            char_vector.at(root_gap_buffer->gap_left) = '_';
         }        		
 			
 	});
@@ -191,15 +196,16 @@ void GapBuffer::right(pobj::pool<GapBuffer::root> pop, int position) {
 	}
 
     pobj::persistent_ptr<GapBuffer::gap_buffer> root_gap_buffer = r->root_gap_buffer;
+    GapBuffer::char_vector_type &char_vector = *(root_gap_buffer->buffer); 
     
     pobj::transaction::run(pop, [&]{
     
         // Moves the gap right, character by character
-        while (position > root_gap_buffer->gapLeft) {
-            root_gap_buffer->gapLeft++;
-            root_gap_buffer->gapRight++;
-            root_gap_buffer->buffer.at(root_gap_buffer->gapLeft - 1) = root_gap_buffer->buffer[root_gap_buffer->gapRight];
-            root_gap_buffer->buffer.at(root_gap_buffer->gapRight) = '_';
+        while (position > root_gap_buffer->gap_left) {
+            root_gap_buffer->gap_left++;
+            root_gap_buffer->gap_right++;
+            char_vector.at(root_gap_buffer->gap_left - 1) = char_vector[root_gap_buffer->gap_right];
+            char_vector.at(root_gap_buffer->gap_right) = '_';
         }               		
 			
 	});
@@ -217,31 +223,33 @@ void GapBuffer::grow(pobj::pool<GapBuffer::root> pop, int k, int position) {
 		return;
 	}    
 
-    pobj::persistent_ptr<GapBuffer::gap_buffer> root_gap_buffer = r->root_gap_buffer;  
+    pobj::persistent_ptr<GapBuffer::gap_buffer> root_gap_buffer = r->root_gap_buffer; 
+    GapBuffer::char_vector_type &char_vector = *(root_gap_buffer->buffer);  
 
-    std::vector<char> copy_vector(root_gap_buffer->size);
+    size_t size = root_gap_buffer->size; 
+    std::vector<char> copy_vector(size);
 
     pobj::transaction::run(pop, [&]{  
 
         // The characters of the buffer after 'position' 
         // are copied to the copy array
-        for (int i = position; i < size; i++) {
-            copy_vector[i - position] = root_gap_buffer->buffer[i];
+        for (size_t i = position; i < size; i++) {
+            copy_vector[i - position] = char_vector[i];
         }
 
         // A gap of 'k' is inserted from the 'position' index
         // The gap is represented by '_'
-        for (int i = 0; i < k; i++) {
-            root_gap_buffer->buffer.insert(root_gap_buffer->buffer.begin() + i + position, '_');
+        for (size_t i = 0; i < k; i++) {
+            char_vector.insert(char_vector.begin() + i + position, '_');
         }
 
         // The remaining array is inserted
-        for (int i = 0; i < k + position; i++) {
-            root_gap_buffer->buffer.insert(root_gap_buffer->buffer.begin()+ position + i + k, copy_vector[i]);
+        for (size_t i = 0; i < k + position; i++) {
+            char_vector.insert(char_vector.begin()+ position + i + k, copy_vector[i]);
         }
 
         root_gap_buffer->size += k;
-        root_gap_buffer->gapRight += k;            				
+        root_gap_buffer->gap_right += k;            				
 	}); 
 
 } 
@@ -256,8 +264,6 @@ void GapBuffer::print_buffer(pobj::pool<GapBuffer::root> pop) {
 	}
 
 	pobj::persistent_ptr<GapBuffer::gap_buffer> root_gap_buffer = r->root_gap_buffer;
-	PieceTable::piece piece;	
-	char c;
 
 	pobj::transaction::run(pop, [&]{
 		
@@ -284,9 +290,10 @@ void GapBuffer::close(pobj::pool<GapBuffer::root> pop, string file_path) {
 		return;
 	}
 
-	pobj::persistent_ptr<PieceTable::gap_buffer> gbuffer = r->root_gap_buffer;
+	pobj::persistent_ptr<GapBuffer::gap_buffer> gbuffer = r->root_gap_buffer;
+    GapBuffer::char_vector_type &char_vector = *(gbuffer->buffer);
     
-    std::string text (gbuffer->buffer.begin(), gbuffer->buffer.end());
+    std::string text (char_vector.begin(), char_vector.end());
 	ofstream out_file;
 	out_file.open(file_path);
 	// Write the string to the file.

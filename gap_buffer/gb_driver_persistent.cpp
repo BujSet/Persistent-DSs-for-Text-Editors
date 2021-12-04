@@ -16,9 +16,9 @@ int main (int argc, char *argv[]) {
 	out_path = "gap_buffer_out.txt";
 	
 	if (access((file_path + "_pers").c_str(), F_OK) != 0) {
-		pop = pmem::obj::pool<PieceTable::root>::create(file_path + "_pers", DEFAULT_LAYOUT, PMEMOBJ_MIN_POOL);				
+		pop = pmem::obj::pool<GapBuffer::root>::create(file_path + "_pers", DEFAULT_LAYOUT, PMEMOBJ_MIN_POOL);				
 	} else {
-		pop = pmem::obj::pool<PieceTable::root>::open(file_path + "_pers", DEFAULT_LAYOUT);
+		pop = pmem::obj::pool<GapBuffer::root>::open(file_path + "_pers", DEFAULT_LAYOUT);
 	}
 
 	while(1){
