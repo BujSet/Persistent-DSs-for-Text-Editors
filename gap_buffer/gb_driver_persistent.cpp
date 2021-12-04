@@ -24,7 +24,7 @@ int main (int argc, char *argv[]) {
 	while(1){
 
 		printf(" 1 -> Create Gap Buffer \n 2 -> Insert String \n 3 -> Delete Character \n 4 -> Move Cursor \n");
-		printf(" 5-> Print Contents \n 6 ->  Write to the output file\n 7 -> Quit \n");
+		printf(" 5 -> Print Contents \n 6 ->  Write to the output file\n 7 -> Quit \n");
 		
 		cin>>input;
 		int cursor_position = 0;
@@ -45,7 +45,7 @@ int main (int argc, char *argv[]) {
 			cin >> insert_str;
 			
 			// For testing purpose, we're using the 0th position here. Could be changed
-			GapBuffer::insert(pop, insert_str, 0);
+			GapBuffer::insert(pop, insert_str, cursor_position);
 
 		} else if(input == 3){
 			
@@ -70,8 +70,8 @@ int main (int argc, char *argv[]) {
 			GapBuffer::print_buffer(pop);
 
 		} else if(input == 6) {
-			cout << "Writing to the output file: " << out_path << endl;
-			GapBuffer::close(pop, out_path);
+			cout << "Writing to the output file: " << file_path << endl;
+			GapBuffer::close(pop, file_path);
 
 		} else if(input == 7){
 			break;
