@@ -29,8 +29,9 @@ void GapBuffer::create(pobj::pool<GapBuffer::root> pop, string file_path) {
 
 		stringstream strStream;
 		strStream << in_file.rdbuf();
-        // TODO: Need to decide if I want to add just the text in the buffer to the file or some metadata as well?
-		auto temp = pobj::make_persistent<GapBuffer::char_vector_type>(strStream.str().c_str(), strlen(strStream.str().c_str()));
+        string fileContents = strStream.str();
+        vector<char> char_vector (fileContents.begin(), fileContents.end()); 
+        auto temp = pobj::make_persistent<GapBuffer::char_vector_type>(char_vector, char_vector.size());
 		gBuffer->buffer = temp;
 
         GapBuffer::initValues(gBuffer);
@@ -263,10 +264,7 @@ void GapBuffer::print_buffer(pobj::pool<GapBuffer::root> pop) {
         cout << "<---------- Printing Gap Buffer ----------->\n";
 		GapBuffer::char_vector_type &char_vector = *(root_gap_buffer->buffer);
 
-		cout<<"ptable->original: "<<(ptable->original)->c_str()<<"\n";
-		cout<<"ptable->add: "<<(ptable->add)->c_str()<<"\n";
-		
-        for (size_t i = 0; i < char_vector.size(); i++) {
+		for (size_t i = 0; i < char_vector.size(); i++) {
             cout << "At position : " << i << " character: " << char_vector[i] << endl;
 		}
 
@@ -288,11 +286,11 @@ void GapBuffer::close(pobj::pool<GapBuffer::root> pop, string file_path) {
 
 	pobj::persistent_ptr<PieceTable::gap_buffer> gbuffer = r->root_gap_buffer;
     
-    // string text = convert the vector of characters to a string;
+    std::string text (gbuffer->buffer.begin(), gbuffer->buffer.end());
 	ofstream out_file;
 	out_file.open(file_path);
 	// Write the string to the file.
-    // out_file << text;
+    out_file << text;
 	out_file.close();
 
 	pobj::transaction::run(pop, [&]{
