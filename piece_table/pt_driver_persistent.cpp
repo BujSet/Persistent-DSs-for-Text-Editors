@@ -61,7 +61,7 @@ int main (int argc, char *argv[]) {
 			PieceTable::print_table(pop);
 		}
 		else if(ip == 8){
-			PieceTable::close(pop, out_path);
+			PieceTable::close(pop, file_path);
 		}
 		else if(ip == 9){
 			break;
