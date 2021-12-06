@@ -13,17 +13,17 @@ int main (int argc, char *argv[]) {
 
 	// cout<<"Enter file name: ";
 	// cin>>file_path;
-	file_path = "eg.txt";
+	file_path = "eg";
 	out_path = "egout.txt";
-	if (access((file_path + "_pers").c_str(), F_OK) != 0) {
-		pop = pmem::obj::pool<PieceTable::root>::create(file_path + "_pers", DEFAULT_LAYOUT, PMEMOBJ_MIN_POOL);				
+	if (access((file_path + "_pool").c_str(), F_OK) != 0) {
+		pop = pmem::obj::pool<PieceTable::root>::create(file_path + "_pool", DEFAULT_LAYOUT, PMEMOBJ_MIN_POOL);				
 	}
 	else {
-		pop = pmem::obj::pool<PieceTable::root>::open(file_path + "_pers", DEFAULT_LAYOUT);
+		pop = pmem::obj::pool<PieceTable::root>::open(file_path + "_pool", DEFAULT_LAYOUT);
 	}
 
 	while(1){
-		cout<<"1-> Create piece table\t 2-> Insert\t 3-> SeekFwd\t 4-> SeekFwd\t 5-> Remove\t 6-> Rewind\n";
+		cout<<"1-> Create piece table\t 2-> Insert\t 3-> SeekFwd\t 4-> SeekBwd\t 5-> Remove\t 6-> Rewind\n";
 		cout<<"7-> Print\t 8-> Write to outfile\t 9-> Quit\n";
 		cin>>ip;
 
@@ -32,7 +32,7 @@ int main (int argc, char *argv[]) {
 				(pop.root())->root_piece_table = pobj::make_persistent<PieceTable::piece_table>();				
 			});
 
-			PieceTable::create(pop, file_path);
+			PieceTable::create(pop, file_path + ".txt");
 		}
 		else if(ip == 2){
 			cout<<"Enter string to be inserted: ";
@@ -61,7 +61,7 @@ int main (int argc, char *argv[]) {
 			PieceTable::print_table(pop);
 		}
 		else if(ip == 8){
-			PieceTable::close(pop, file_path);
+			PieceTable::close(pop, file_path + "_pers.txt");
 		}
 		else if(ip == 9){
 			break;
