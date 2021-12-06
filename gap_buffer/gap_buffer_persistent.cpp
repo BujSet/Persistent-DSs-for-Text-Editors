@@ -265,7 +265,7 @@ void GapBuffer::grow(pobj::pool<GapBuffer::root> pop, int k, int position) {
 
         // The remaining array is inserted
         for (size_t i = 0; i < k + position; i++) {
-            char_vector[char_vector.begin()+ position + i + k] = copy_vector[i];
+            char_vector[position + i + k] = copy_vector[i];
         }
 
         cout << "Size of vector<char>: " << char_vector.size() << endl;
