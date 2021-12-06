@@ -1,0 +1,7 @@
+size,insert_time,remove_time
+16,367.778,358.594
+64,1380.38,1412.41
+256,5572.2,6247.07
+1024,21961.3,27436.1
+4096,terminate called after throwing an instance of 'pmem::transaction_out_of_memory'
+Aborted (core dumped)
