@@ -186,7 +186,7 @@ void GapBuffer::left(pobj::pool<GapBuffer::root> pop, int position) {
     pobj::transaction::run(pop, [&]{
 
         // cout << "Inside left(), with position: " << position << " and gap_left: " 
-        << root_gap_buffer->gap_left << " and gap_right: " << root_gap_buffer->gap_right << endl;
+        // << root_gap_buffer->gap_left << " and gap_right: " << root_gap_buffer->gap_right << endl;
         
         // Moves the gap left, character by character
         while (position < root_gap_buffer->gap_left) {
