@@ -10,8 +10,8 @@ using std::chrono::duration;
 using std::chrono::high_resolution_clock;
 
 void evaluate(pobj::pool<PieceTable::root> pop, string file_path){
-    high_resolution_clock::time_point start;
-    high_resolution_clock::time_point end;
+    high_resolution_clock::time_point start, start1;
+    high_resolution_clock::time_point end, end1;
     duration<double, std::milli> duration_sec;
     std::string item_name;
     std::ifstream nameFileout;
@@ -19,10 +19,36 @@ void evaluate(pobj::pool<PieceTable::root> pop, string file_path){
     nameFileout.open("input_eval.txt");
     string line;
     start = high_resolution_clock::now();
-    while(std::getline(nameFileout, line))
+    while(nameFileout >> line)
     {
+        // start1 = high_resolution_clock::now();
         PieceTable::insert(pop, line);
+        // end1 = high_resolution_clock::now();
+        // duration_sec = std::chrono::duration_cast<duration<double, std::milli>>(end1 - start1);
+        // cout << "1 word insert time:" << duration_sec.count() << endl;
     }    
+    PieceTable::close(pop, file_path + "_pers_test.txt");
+    end = high_resolution_clock::now();
+    duration_sec = std::chrono::duration_cast<duration<double, std::milli>>(end - start);
+    cout << "insert time:" << duration_sec.count() << endl;
+}
+
+void evaluate_charlevel(pobj::pool<PieceTable::root> pop, string file_path){
+    high_resolution_clock::time_point start, start1;
+    high_resolution_clock::time_point end, end1;
+    duration<double, std::milli> duration_sec;
+    std::string item_name;
+    std::ifstream nameFileout;
+    char ch;
+
+    nameFileout.open("input_eval.txt");
+    string line;
+    start = high_resolution_clock::now();
+    while(nameFileout >> noskipws >> ch) {
+        start1 = high_resolution_clock::now();
+        PieceTable::insert(pop, string(1, ch));
+        end = high_resolution_clock::now();     
+    }
     PieceTable::close(pop, file_path + "_pers_test.txt");
     end = high_resolution_clock::now();
     duration_sec = std::chrono::duration_cast<duration<double, std::milli>>(end - start);
@@ -74,6 +100,12 @@ int main(int argc, char *argv[])
         evaluate(pop, file_path);
         exit(0);
     }
+    else if(n == -2){
+        cout<<"Piece table persistent version\nCharlevel Insert metric evaluation mode\n";
+        evaluate_charlevel(pop, file_path);
+        exit(0);
+    }
+
     start = high_resolution_clock::now();
     for (size_t i = 0; i < n; i++)
     {

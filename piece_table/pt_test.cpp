@@ -27,6 +27,27 @@ void evaluate(PieceTable::PT *T, string file_path){
     cout << "insert time:" << duration_sec.count() << endl;
 }
 
+void evaluate_charlevel(PieceTable::PT *T, string file_path){
+    high_resolution_clock::time_point start;
+    high_resolution_clock::time_point end;
+    duration<double, std::milli> duration_sec;
+    std::string item_name;
+    std::ifstream nameFileout;
+    char ch;
+
+    nameFileout.open("input_eval.txt");
+    string line;
+    start = high_resolution_clock::now();
+    while(nameFileout >> noskipws >> ch) {
+        PieceTable::insert(T, string(1, ch));
+        // cout<<ch<<string(1, ch);
+        PieceTable::close(T, file_path + "_vol_test.txt");
+    }
+    end = high_resolution_clock::now();
+    duration_sec = std::chrono::duration_cast<duration<double, std::milli>>(end - start);
+    cout << "insert time:" << duration_sec.count() << endl;
+}
+
 int main(int argc, char *argv[])
 {
     size_t n = 1;
@@ -52,6 +73,11 @@ int main(int argc, char *argv[])
     if(n == -1){
         cout<<"Piece table volatile version\nInsert metric evaluation mode\n";
         evaluate(T, file_path);
+        exit(0);
+    }
+    else if(n == -2){
+        cout<<"Piece table volatile version\nCharlevel Insert metric evaluation mode\n";
+        evaluate_charlevel(T, file_path);
         exit(0);
     }
 
@@ -86,7 +112,7 @@ int main(int argc, char *argv[])
         std::chrono::duration_cast<duration<double, std::milli>>(end - start);
     cout << "remove time:" << duration_sec.count() << endl;
 
-    PieceTable::close(T, "hello.txt");
+    PieceTable::close(T, file_path + "_vol_test.txt");
     free(T);
     return 0;
 }
