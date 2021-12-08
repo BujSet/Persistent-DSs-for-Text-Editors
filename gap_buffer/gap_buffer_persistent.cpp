@@ -7,7 +7,7 @@
 
 #include "gap_buffer_persistent.h"
 
-#define DEFAULT_BUFFER_SIZE 10
+#define DEFAULT_BUFFER_SIZE 50
 
 using namespace std;
 
