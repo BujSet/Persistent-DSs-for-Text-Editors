@@ -52,7 +52,11 @@ int main(int argc, char *argv[])
     start = high_resolution_clock::now();
     for (size_t i = 0; i < n; i++)
     {
-        GapBuffer::insert(pop, "a", 0);
+        start = high_resolution_clock::now();
+        GapBuffer::insert(pop, "a", i);
+        end = high_resolution_clock::now();
+        duration_sec = std::chrono::duration_cast<duration<double, std::milli>>(end - start);
+        cout << duration_sec.count() << endl;
     }
     end = high_resolution_clock::now();
     duration_sec =
