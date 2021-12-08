@@ -248,9 +248,7 @@ void GapBuffer::grow(pobj::pool<GapBuffer::root> pop, int k, int position) {
 
     // A gap of 'k' is inserted from the 'position' index
     // The gap is represented by '_'
-    for (size_t i = 0; i < k; i++) {
-        char_vector.insert(char_vector.begin() + i + position, '_');
-    }
+    char_vector.insert(char_vector.begin() + position + 1, k, '_');
 
     // cout << "Size of vector<char>: " << char_vector.size() << endl;
 
