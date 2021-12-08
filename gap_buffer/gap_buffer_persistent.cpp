@@ -18,8 +18,7 @@ void GapBuffer::create(pobj::pool<GapBuffer::root> pop, string file_path) {
 
 	pobj::transaction::run(pop, [&] {
         gBuffer = r->root_gap_buffer;	
-		// gBuffer->buffer = pobj::make_persistent<GapBuffer::char_vector_type>();
-    
+	
 		GapBuffer::char_vector_type &cvector = *(gBuffer->buffer);
 
 		in_file.open(file_path);
@@ -65,7 +64,7 @@ void GapBuffer::initValues(pobj::persistent_ptr<GapBuffer::gap_buffer> gBuffer) 
     gap_size = (gap_left != gap_right) ? gap_right - gap_left + 1 : 0;
 
     if (gap_left == -1) {
-        //GapBuffer::grow(pop, k, position);
+        
         for (size_t i = 0; i < DEFAULT_BUFFER_SIZE; i++) {
             char_vector.push_back('_');
         }
@@ -80,6 +79,9 @@ void GapBuffer::initValues(pobj::persistent_ptr<GapBuffer::gap_buffer> gBuffer) 
     gBuffer->gap_right = gap_right;
     gBuffer->gap_size = gap_size;
     gBuffer-> size = gBuffer->buffer->size();
+    });
+
+    cout << "Total Size at the end: " << gBuffer-> size << endl;
 
 }
 
@@ -159,14 +161,15 @@ void GapBuffer::moveCursor(pobj::pool<GapBuffer::root> pop, int position) {
 
     pobj::persistent_ptr<GapBuffer::gap_buffer> root_gap_buffer = r->root_gap_buffer;
     
-    pobj::transaction::run(pop, [&]{
-        
-        if (position < root_gap_buffer->gap_left) {
-            GapBuffer::left(pop, position);
-        } else {
-            GapBuffer::right(pop, position);
+    if (position < root_gap_buffer->gap_left) {
+        GapBuffer::left(pop, position);
+    } else {
+        GapBuffer::right(pop, position);
+    }       				
         }       				
-	});
+    }       				
+        }       				
+    }       				
 
 }
 
@@ -183,20 +186,25 @@ void GapBuffer::left(pobj::pool<GapBuffer::root> pop, int position) {
     pobj::persistent_ptr<GapBuffer::gap_buffer> root_gap_buffer = r->root_gap_buffer;
     GapBuffer::char_vector_type &char_vector = *(root_gap_buffer->buffer); 
     
-    pobj::transaction::run(pop, [&]{
-
+    // cout << "Inside left(), with position: " << position << " and gap_left: " 
         // cout << "Inside left(), with position: " << position << " and gap_left: " 
-        // << root_gap_buffer->gap_left << " and gap_right: " << root_gap_buffer->gap_right << endl;
+    // cout << "Inside left(), with position: " << position << " and gap_left: " 
+        // cout << "Inside left(), with position: " << position << " and gap_left: " 
+    // cout << "Inside left(), with position: " << position << " and gap_left: " 
+    // << root_gap_buffer->gap_left << " and gap_right: " << root_gap_buffer->gap_right << endl;
         
-        // Moves the gap left, character by character
-        while (position < root_gap_buffer->gap_left) {
-            root_gap_buffer->gap_left--;
-            root_gap_buffer->gap_right--;
-            char_vector.at(root_gap_buffer->gap_right + 1) = char_vector[root_gap_buffer->gap_left];
-            char_vector.at(root_gap_buffer->gap_left) = '_';
+    // Moves the gap left, character by character
+    while (position < root_gap_buffer->gap_left) {
+        root_gap_buffer->gap_left--;
+        root_gap_buffer->gap_right--;
+        char_vector.at(root_gap_buffer->gap_right + 1) = char_vector[root_gap_buffer->gap_left];
+        char_vector.at(root_gap_buffer->gap_left) = '_';
+    }        		
         }        		
+    }        		
+        }        		
+    }        		
 			
-	});
 }
 
 /**
@@ -212,19 +220,25 @@ void GapBuffer::right(pobj::pool<GapBuffer::root> pop, int position) {
     pobj::persistent_ptr<GapBuffer::gap_buffer> root_gap_buffer = r->root_gap_buffer;
     GapBuffer::char_vector_type &char_vector = *(root_gap_buffer->buffer); 
     
-    pobj::transaction::run(pop, [&] {
+    // cout << "Inside right(), with position: " << position << " and gap_left: " 
         // cout << "Inside right(), with position: " << position << " and gap_left: " 
-        // << root_gap_buffer->gap_left << " and gap_right: " << root_gap_buffer->gap_right << endl;
+    // cout << "Inside right(), with position: " << position << " and gap_left: " 
+        // cout << "Inside right(), with position: " << position << " and gap_left: " 
+    // cout << "Inside right(), with position: " << position << " and gap_left: " 
+    // << root_gap_buffer->gap_left << " and gap_right: " << root_gap_buffer->gap_right << endl;
     
-        // Moves the gap right, character by character
-        while (position > root_gap_buffer->gap_left) {
-            root_gap_buffer->gap_left++;
-            root_gap_buffer->gap_right++;
-            char_vector.at(root_gap_buffer->gap_left - 1) = char_vector[root_gap_buffer->gap_right];
-            char_vector.at(root_gap_buffer->gap_right) = '_';
+    // Moves the gap right, character by character
+    while (position > root_gap_buffer->gap_left) {
+        root_gap_buffer->gap_left++;
+        root_gap_buffer->gap_right++;
+        char_vector.at(root_gap_buffer->gap_left - 1) = char_vector[root_gap_buffer->gap_right];
+        char_vector.at(root_gap_buffer->gap_right) = '_';
+    }               		
         }               		
+    }               		
+        }               		
+    }               		
 			
-	});
 }
 
 /**
@@ -245,34 +259,43 @@ void GapBuffer::grow(pobj::pool<GapBuffer::root> pop, int k, int position) {
     size_t size = root_gap_buffer->size; 
     std::vector<char> copy_vector(size);
 
-    pobj::transaction::run(pop, [&]{ 
-
+    // cout << " Let's see what is happening inside grow()\n"; 
         // cout << " Let's see what is happening inside grow()\n"; 
+    // cout << " Let's see what is happening inside grow()\n"; 
+        // cout << " Let's see what is happening inside grow()\n"; 
+    // cout << " Let's see what is happening inside grow()\n"; 
 
+    // The characters of the buffer after 'position' 
         // The characters of the buffer after 'position' 
-        // are copied to the copy array
-        for (size_t i = position; i < size; i++) {
-            copy_vector[i - position] = char_vector[i];
-        }
+    // The characters of the buffer after 'position' 
+        // The characters of the buffer after 'position' 
+    // The characters of the buffer after 'position' 
+    // are copied to the copy array
+    for (size_t i = position; i < size; i++) {
+        copy_vector[i - position] = char_vector[i];
+    }
 
-        // A gap of 'k' is inserted from the 'position' index
-        // The gap is represented by '_'
-        for (size_t i = 0; i < k; i++) {
-            char_vector.insert(char_vector.begin() + i + position, '_');
-        }
+    // A gap of 'k' is inserted from the 'position' index
+    // The gap is represented by '_'
+    for (size_t i = 0; i < k; i++) {
+        char_vector.insert(char_vector.begin() + i + position, '_');
+    }
 
-        // cout << "Size of vector<char>: " << char_vector.size() << endl;
+    // cout << "Size of vector<char>: " << char_vector.size() << endl;
 
-        // The remaining array is inserted
-        for (size_t i = 0; i < k + position; i++) {
-            char_vector[position + i + k] = copy_vector[i];
-        }
+    // The remaining array is inserted
+    for (size_t i = 0; i < k + position; i++) {
+        char_vector[position + i + k] = copy_vector[i];
+    }
 
-        // cout << "Size of vector<char>: " << char_vector.size() << endl;
+    // cout << "Size of vector<char>: " << char_vector.size() << endl;
 
-        root_gap_buffer->size += k;
+    root_gap_buffer->size += k;
+    root_gap_buffer->gap_right += k;            				
         root_gap_buffer->gap_right += k;            				
-	}); 
+    root_gap_buffer->gap_right += k;            				
+        root_gap_buffer->gap_right += k;            				
+    root_gap_buffer->gap_right += k;            				
 
 } 
 
