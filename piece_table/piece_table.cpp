@@ -249,11 +249,13 @@ void PieceTable::close(PieceTable::PT *T, string file_path) {
 	out_file.open(file_path);
 	out_file << text;
 	out_file.close();
-
+	
+	/*
 	for (PieceTable::P *piece: T->pieces) {
 		free(piece);
 	}
 	free(T->cursor);
+	*/
 }
 
 void PieceTable::print_table(PieceTable::PT *T) {
