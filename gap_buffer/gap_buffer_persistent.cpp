@@ -185,8 +185,8 @@ void GapBuffer::left(pobj::pool<GapBuffer::root> pop, int position) {
     
     pobj::transaction::run(pop, [&]{
 
-        cout << "Inside left(), with position: " << position << " and gap_left: " 
-        << root_gap_buffer->gap_left << " and gap_right: " << root_gap_buffer->gap_right << endl;
+        // cout << "Inside left(), with position: " << position << " and gap_left: " 
+        // << root_gap_buffer->gap_left << " and gap_right: " << root_gap_buffer->gap_right << endl;
         
         // Moves the gap left, character by character
         while (position < root_gap_buffer->gap_left) {
@@ -213,8 +213,8 @@ void GapBuffer::right(pobj::pool<GapBuffer::root> pop, int position) {
     GapBuffer::char_vector_type &char_vector = *(root_gap_buffer->buffer); 
     
     pobj::transaction::run(pop, [&] {
-        cout << "Inside right(), with position: " << position << " and gap_left: " 
-        << root_gap_buffer->gap_left << " and gap_right: " << root_gap_buffer->gap_right << endl;
+        // cout << "Inside right(), with position: " << position << " and gap_left: " 
+        // << root_gap_buffer->gap_left << " and gap_right: " << root_gap_buffer->gap_right << endl;
     
         // Moves the gap right, character by character
         while (position > root_gap_buffer->gap_left) {
@@ -247,7 +247,7 @@ void GapBuffer::grow(pobj::pool<GapBuffer::root> pop, int k, int position) {
 
     pobj::transaction::run(pop, [&]{ 
 
-        cout << " Let's see what is happening inside grow()\n"; 
+        // cout << " Let's see what is happening inside grow()\n"; 
 
         // The characters of the buffer after 'position' 
         // are copied to the copy array
@@ -261,14 +261,14 @@ void GapBuffer::grow(pobj::pool<GapBuffer::root> pop, int k, int position) {
             char_vector.insert(char_vector.begin() + i + position, '_');
         }
 
-        cout << "Size of vector<char>: " << char_vector.size() << endl;
+        // cout << "Size of vector<char>: " << char_vector.size() << endl;
 
         // The remaining array is inserted
         for (size_t i = 0; i < k + position; i++) {
-            char_vector[char_vector.begin()+ position + i + k] = copy_vector[i];
+            char_vector[position + i + k] = copy_vector[i];
         }
 
-        cout << "Size of vector<char>: " << char_vector.size() << endl;
+        // cout << "Size of vector<char>: " << char_vector.size() << endl;
 
         root_gap_buffer->size += k;
         root_gap_buffer->gap_right += k;            				
