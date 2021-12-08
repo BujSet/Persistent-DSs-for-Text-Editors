@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
     end = high_resolution_clock::now();
     duration_sec =
         std::chrono::duration_cast<duration<double, std::milli>>(end - start);
-    cout << "insert time:" << duration_sec.count() << endl;
+    cout << "insert time:" << duration_sec.count() << " ms" << endl;
 
     start = high_resolution_clock::now();
     for (size_t i = 0; i < n; i++)
@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
     end = high_resolution_clock::now();
     duration_sec =
         std::chrono::duration_cast<duration<double, std::milli>>(end - start);
-    cout << "remove time:" << duration_sec.count() << endl;
+    cout << "remove time:" << duration_sec.count() << " ms" << endl;
 
     return 0;
 }
