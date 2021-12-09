@@ -101,7 +101,7 @@ void PieceTable::insert(pobj::pool<PieceTable::root> pop, string s) {
 		p.src = PieceTable::ADD;
 		p.start = ptable->add_start;
 		p.len = s.size();
-		ptable->add_start = s.size();
+		ptable->add_start += s.size();
 
 		// Next we place the string into the add buffer
 		(ptable->add)->replace(p.start, p.len, s.c_str());

@@ -28,7 +28,7 @@ void evaluate(pobj::pool<PieceTable::root> pop, string file_path){
         // duration_sec = std::chrono::duration_cast<duration<double, std::milli>>(end1 - start1);
         // cout << "1 word insert time:" << duration_sec.count() << endl;
     }    
-    // PieceTable::close(pop, file_path + "_pers_test.txt");
+    PieceTable::close(pop, file_path + "_pers_test.txt");
     end = high_resolution_clock::now();
     duration_sec = std::chrono::duration_cast<duration<double, std::milli>>(end - start);
     cout << "insert time:" << duration_sec.count() << endl;
