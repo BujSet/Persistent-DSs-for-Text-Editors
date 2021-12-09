@@ -32,13 +32,19 @@ void PieceTable::create(pobj::pool<PieceTable::root> pop, string file_path) {
 		strStream << in_file.rdbuf();
 		auto t1 = pobj::make_persistent<string_type>(strStream.str().c_str(), strlen(strStream.str().c_str()));
 		ptable->original = t1;
-		auto t2 = pobj::make_persistent<string_type>("", 0);
+		string tmp;
+		for(int i=0;i<5000;i++){
+			tmp+="-";
+		}
+		auto t2 = pobj::make_persistent<string_type>(tmp.c_str(), strlen(tmp.c_str()));
 		ptable->add = t2;
 
 		p.src = ORIGINAL;
 		p.start = 0;
 		p.len = ptable->original->size();
 		pvector.push_back(p);
+
+		ptable->add_start = 0;
 
 		c = pobj::make_persistent<PieceTable::cursor>();
 		c->pos = 0;
@@ -90,14 +96,16 @@ void PieceTable::insert(pobj::pool<PieceTable::root> pop, string s) {
 
 	pobj::transaction::run(pop, [&]{
 		PieceTable::piece_vector_type &pvector = *(ptable->pieces);
-
+		
 		// First we create a piece to represent this addition
 		p.src = PieceTable::ADD;
-		p.start = ptable->add->size();
+		p.start = ptable->add_start;
 		p.len = s.size();
+		ptable->add_start = s.size();
 
 		// Next we place the string into the add buffer
-		(ptable->add)->append(s.c_str());
+		(ptable->add)->replace(p.start, p.len, s.c_str());
+		// (ptable->add)->append(s.c_str());
 		
 		c = ptable->cursor_pt;
 		piece = pvector[c->piece_idx];
@@ -105,6 +113,7 @@ void PieceTable::insert(pobj::pool<PieceTable::root> pop, string s) {
 		if (c->piece_offset == 0) {
 			// Need to insert the piece before cursor piece
 			pvector.insert(pvector.begin() + c->piece_idx, p);
+			pvector[c->piece_idx] = p;
 			c->pos += p.len;
 			c->piece_idx++;
 		} 
@@ -112,6 +121,7 @@ void PieceTable::insert(pobj::pool<PieceTable::root> pop, string s) {
 			// Need to insert the piece after cursor piece
 			c->piece_idx++;
 			pvector.insert(pvector.begin() + c->piece_idx, p);
+			pvector[c->piece_idx] = p;
 			c->pos += piece.len;
 		} 
 		else {
@@ -124,6 +134,8 @@ void PieceTable::insert(pobj::pool<PieceTable::root> pop, string s) {
 			c->pos += p.len;
 			pvector.insert(pvector.begin() + c->piece_idx, post);
 			pvector.insert(pvector.begin() + c->piece_idx, p);
+			pvector[c->piece_idx] = post;
+			pvector[c->piece_idx] = p;
 			c->piece_idx++;
 			c->piece_offset = 0;
 		}
@@ -275,7 +287,7 @@ void PieceTable::seek(pobj::pool<PieceTable::root> pop, size_t offset, PieceTabl
 void PieceTable::rewind(pobj::pool<PieceTable::root> pop) {
 	auto r = pop.root();
 	if (r->root_piece_table == NULL) {
-		cout << "Unbale to get character from null piece table\n";
+		cout << "Unable to get character from null piece table\n";
 		return;
 	}
 
@@ -342,18 +354,17 @@ void PieceTable::print_table(pobj::pool<PieceTable::root> pop) {
 			cout << "\tPiece[" << i << "]:={" << piece.src << ", start=" << piece.start << 
 			", len=" << piece.len << ", c="<< c<<"}\n";
 		}
-		PieceTable::print_cursor(pop);
+		// PieceTable::print_cursor(pop);
 		
-		piece = pvector[ptable->cursor_pt->piece_idx];
-		if (piece.src == PieceTable::ORIGINAL) {
-			c = ptable->original->at(piece.start + ptable->cursor_pt->piece_offset);
-		} 
-		else {
-			c = ptable->add->at(piece.start + ptable->cursor_pt->piece_offset);
-		}
+		// piece = pvector[ptable->cursor_pt->piece_idx];
+		// if (piece.src == PieceTable::ORIGINAL) {
+		// 	c = ptable->original->at(piece.start + ptable->cursor_pt->piece_offset);
+		// } 
+		// else {
+		// 	c = ptable->add->at(piece.start + ptable->cursor_pt->piece_offset);
+		// }
 
-		cout << "Char at cursor =" << c << "\n"; 
-		cout << "\\------------- End piece table -------------/\n";
+		// cout << "Char at cursor =" << c << "\n"; 
+		// cout << "\\------------- End piece table -------------/\n";
 	});
-
 }

@@ -43,6 +43,7 @@ namespace PieceTable {
 		pobj::p<size_t> start;
 		pobj::p<size_t> len;
 	} piece;
+
 	using piece_vector_type = pobj::vector<piece>;
 
 	typedef struct piece_table {
@@ -50,6 +51,7 @@ namespace PieceTable {
 		pobj::persistent_ptr<string_type> add;
 		pobj::persistent_ptr<piece_vector_type> pieces;
 		pobj::persistent_ptr<cursor> cursor_pt;
+		pobj::p<int> add_start;
 	} piece_table;
 
 	typedef struct root {
