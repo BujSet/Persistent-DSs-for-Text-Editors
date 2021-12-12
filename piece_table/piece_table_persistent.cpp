@@ -14,7 +14,7 @@ void PieceTable::create(pobj::pool<PieceTable::root> pop, string file_path) {
 	pobj::persistent_ptr<PieceTable::piece_table> ptable;
 	PieceTable::piece p;
 	pobj::persistent_ptr<PieceTable::cursor> c;
-	ifstream in_file;
+	ifstream in_file;	
 
 	pobj::transaction::run(pop, [&]{
 		ptable = r->root_piece_table;		
@@ -32,11 +32,14 @@ void PieceTable::create(pobj::pool<PieceTable::root> pop, string file_path) {
 		strStream << in_file.rdbuf();
 		auto t1 = pobj::make_persistent<string_type>(strStream.str().c_str(), strlen(strStream.str().c_str()));
 		ptable->original = t1;
+
+		// Static allocation - Fix for Intel PMDK bug resulting in out of transaction memory error
 		string tmp;
-		for(int i=0;i<5000;i++){
-			tmp+="-";
+		for(int i = 0; i < 5000; i++){
+			tmp += "-";
 		}
 		auto t2 = pobj::make_persistent<string_type>(tmp.c_str(), strlen(tmp.c_str()));
+		// (ptable->add)->append(tmp.c_str());
 		ptable->add = t2;
 
 		p.src = ORIGINAL;
@@ -342,7 +345,10 @@ void PieceTable::print_table(pobj::pool<PieceTable::root> pop) {
 		PieceTable::piece_vector_type &pvector = *(ptable->pieces);
 
 		cout<<"ptable->original: "<<(ptable->original)->c_str()<<"\n";
-		cout<<"ptable->add: "<<(ptable->add)->c_str()<<"\n";
+		string add1 = string((ptable->add)->c_str()); 
+		add1 = add1.substr(0, add1.find("-"));
+		cout<<"ptable->add: "<<add1<<endl;
+		
 		for (size_t i = 0; i < pvector.size(); i++) {
 			piece = pvector[i];
 			if (piece.src == PieceTable::ORIGINAL) {
@@ -354,17 +360,17 @@ void PieceTable::print_table(pobj::pool<PieceTable::root> pop) {
 			cout << "\tPiece[" << i << "]:={" << piece.src << ", start=" << piece.start << 
 			", len=" << piece.len << ", c="<< c<<"}\n";
 		}
-		// PieceTable::print_cursor(pop);
+		PieceTable::print_cursor(pop);
 		
-		// piece = pvector[ptable->cursor_pt->piece_idx];
-		// if (piece.src == PieceTable::ORIGINAL) {
-		// 	c = ptable->original->at(piece.start + ptable->cursor_pt->piece_offset);
-		// } 
-		// else {
-		// 	c = ptable->add->at(piece.start + ptable->cursor_pt->piece_offset);
-		// }
+		piece = pvector[ptable->cursor_pt->piece_idx];
+		if (piece.src == PieceTable::ORIGINAL) {
+			c = ptable->original->at(piece.start + ptable->cursor_pt->piece_offset);
+		} 
+		else {
+			c = ptable->add->at(piece.start + ptable->cursor_pt->piece_offset);
+		}
 
-		// cout << "Char at cursor =" << c << "\n"; 
-		// cout << "\\------------- End piece table -------------/\n";
+		cout << "Char at cursor =" << c << "\n"; 
+		cout << "\\------------- End piece table -------------/\n";
 	});
 }

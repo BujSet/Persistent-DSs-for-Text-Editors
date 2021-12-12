@@ -1,4 +1,6 @@
 #include <iostream>
+#include <fstream>
+#include <cstdio>
 
 #include "piece_table_persistent.h"
 
@@ -16,18 +18,32 @@ int main (int argc, char *argv[]) {
 	file_path = "eg";
 	out_path = "egout.txt";
 	if (access((file_path + "_pool").c_str(), F_OK) != 0) {
-		pop = pmem::obj::pool<PieceTable::root>::create(file_path + "_pool", DEFAULT_LAYOUT, PMEMOBJ_MIN_POOL);				
+		cout<<"Created pool!\n";
+		pop = pmem::obj::pool<PieceTable::root>::create(file_path + "_pool", DEFAULT_LAYOUT, PMEMOBJ_MIN_POOL);	
+		pobj::transaction::run(pop, [&]{
+			(pop.root())->root_piece_table = pobj::make_persistent<PieceTable::piece_table>();				
+		});
+
+		PieceTable::create(pop, file_path + ".txt");			
 	}
 	else {
+		cout<<"Opened existing pool!\n";
 		pop = pmem::obj::pool<PieceTable::root>::open(file_path + "_pool", DEFAULT_LAYOUT);
 	}
 
 	while(1){
-		cout<<"1-> Create piece table\t 2-> Insert\t 3-> SeekFwd\t 4-> SeekBwd\t 5-> Remove\t 6-> Rewind\n";
+		cout<<"1-> Reinitialize piece table pool\t 2-> Insert\t 3-> SeekFwd\t 4-> SeekBwd\t 5-> Remove\t 6-> Rewind\n";
 		cout<<"7-> Print\t 8-> Write to outfile\t 9-> Quit\n";
 		cin>>ip;
 
 		if(ip == 1){
+			string pool_name = string(file_path + string("_pool"));
+			if(remove(pool_name.c_str()) != 0){
+				cout<<"Unable to delete existing pool: "<<pool_name<<"\n";
+				continue;
+			}
+
+			pop = pmem::obj::pool<PieceTable::root>::create(file_path + "_pool", DEFAULT_LAYOUT, PMEMOBJ_MIN_POOL);	
 			pobj::transaction::run(pop, [&]{
 				(pop.root())->root_piece_table = pobj::make_persistent<PieceTable::piece_table>();				
 			});
@@ -36,7 +52,8 @@ int main (int argc, char *argv[]) {
 		}
 		else if(ip == 2){
 			cout<<"Enter string to be inserted: ";
-			cin>>insert_str;
+			cin.ignore();
+			std::getline(std::cin, insert_str);
 			PieceTable::insert(pop, insert_str);
 		}
 		else if(ip == 3){
