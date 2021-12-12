@@ -71,7 +71,7 @@ string PieceTable::stitch(pobj::pool<PieceTable::root> pop) {
 	pobj::transaction::run(pop, [&]{
 		PieceTable::piece_vector_type &pvector = *(ptable->pieces);
 
-		for (int i = 0; i < pvector.size(); i++) {
+		for (size_t i = 0; i < pvector.size(); i++) {
 			p = &pvector[i];
 			assert(p);
 			if (p->src == PieceTable::ORIGINAL) {
@@ -310,7 +310,6 @@ void PieceTable::close(pobj::pool<PieceTable::root> pop, string file_path) {
 
 	pobj::persistent_ptr<PieceTable::piece_table> ptable = r->root_piece_table;
 	pobj::persistent_ptr<PieceTable::piece> piece;
-	pobj::persistent_ptr<PieceTable::cursor> c = ptable->cursor_pt;	
 
 	string text = PieceTable::stitch(pop);
 	ofstream out_file;
@@ -321,7 +320,7 @@ void PieceTable::close(pobj::pool<PieceTable::root> pop, string file_path) {
 	pobj::transaction::run(pop, [&]{
 		PieceTable::piece_vector_type &pvector = *(ptable->pieces);
 
-		for (int i = 0; i < pvector.size(); i++) {
+		for (size_t i = 0; i < pvector.size(); i++) {
 			pobj::delete_persistent<PieceTable::piece>(&pvector[i]);
 
 		}

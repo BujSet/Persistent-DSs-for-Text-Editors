@@ -10,7 +10,8 @@ int main (int argc, char *argv[]) {
 	}
 	PieceTable::PT *T = (PieceTable::PT *)malloc(sizeof(PieceTable::PT));
 
-	PieceTable::open(T, argv[1]);
+	string file_name = "init_read";
+	PieceTable::open(T, file_name + ".txt");
 	PieceTable::seek(T, 9, PieceTable::FWD);
 	PieceTable::seek(T, 2, PieceTable::BWD);
 	PieceTable::seek(T, PieceTable::get_cursor_pos(T), PieceTable::BWD);
@@ -36,7 +37,7 @@ int main (int argc, char *argv[]) {
 
 	PieceTable::remove(T, 5);
 
-	PieceTable::close(T, "hello.txt");
+	PieceTable::close(T, file_name + "_vol.txt");
 	free(T);
 	return 0;
 }

@@ -11,24 +11,21 @@ using namespace std;
 int main (int argc, char *argv[]) {
 	pobj::pool<PieceTable::root> pop;
 	int ip, len_str, offset;
-	string file_path, insert_str, out_path;
+	string file_name, insert_str;
 
-	// cout<<"Enter file name: ";
-	// cin>>file_path;
-	file_path = "eg";
-	out_path = "egout.txt";
-	if (access((file_path + "_pool").c_str(), F_OK) != 0) {
+	file_name = "init_read";
+	if (access((file_name + "_pool").c_str(), F_OK) != 0) {
 		cout<<"Created pool!\n";
-		pop = pmem::obj::pool<PieceTable::root>::create(file_path + "_pool", DEFAULT_LAYOUT, PMEMOBJ_MIN_POOL);	
+		pop = pmem::obj::pool<PieceTable::root>::create(file_name + "_pool", DEFAULT_LAYOUT, PMEMOBJ_MIN_POOL);	
 		pobj::transaction::run(pop, [&]{
 			(pop.root())->root_piece_table = pobj::make_persistent<PieceTable::piece_table>();				
 		});
 
-		PieceTable::create(pop, file_path + ".txt");			
+		PieceTable::create(pop, file_name + ".txt");			
 	}
 	else {
 		cout<<"Opened existing pool!\n";
-		pop = pmem::obj::pool<PieceTable::root>::open(file_path + "_pool", DEFAULT_LAYOUT);
+		pop = pmem::obj::pool<PieceTable::root>::open(file_name + "_pool", DEFAULT_LAYOUT);
 	}
 
 	while(1){
@@ -37,18 +34,18 @@ int main (int argc, char *argv[]) {
 		cin>>ip;
 
 		if(ip == 1){
-			string pool_name = string(file_path + string("_pool"));
+			string pool_name = string(file_name + string("_pool"));
 			if(remove(pool_name.c_str()) != 0){
 				cout<<"Unable to delete existing pool: "<<pool_name<<"\n";
 				continue;
 			}
 
-			pop = pmem::obj::pool<PieceTable::root>::create(file_path + "_pool", DEFAULT_LAYOUT, PMEMOBJ_MIN_POOL);	
+			pop = pmem::obj::pool<PieceTable::root>::create(file_name + "_pool", DEFAULT_LAYOUT, PMEMOBJ_MIN_POOL);	
 			pobj::transaction::run(pop, [&]{
 				(pop.root())->root_piece_table = pobj::make_persistent<PieceTable::piece_table>();				
 			});
 
-			PieceTable::create(pop, file_path + ".txt");
+			PieceTable::create(pop, file_name + ".txt");
 		}
 		else if(ip == 2){
 			cout<<"Enter string to be inserted: ";
@@ -78,7 +75,7 @@ int main (int argc, char *argv[]) {
 			PieceTable::print_table(pop);
 		}
 		else if(ip == 8){
-			PieceTable::close(pop, file_path + "_pers.txt");
+			PieceTable::close(pop, file_name + "_pers.txt");
 		}
 		else if(ip == 9){
 			break;
