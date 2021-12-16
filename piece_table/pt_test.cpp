@@ -83,10 +83,10 @@ int main(int argc, char *argv[])
     PieceTable::open(T, file_path + ".txt");
 
     if(n < 0){
-        cout<<"Piece table volatile version\nInsert metric evaluation mode\n";
+        cout<<"Piece table volatile version\nInsert words evaluation mode\n";
         evaluate(T, file_path, n);
 
-        cout<<"Piece table volatile version\nCharlevel Insert metric evaluation mode\n";
+        cout<<"Piece table volatile version\nTyping simulation character wise evaluation mode\n";
         evaluate_typing_simul_1min(T, file_path, n);
         exit(0);
     }

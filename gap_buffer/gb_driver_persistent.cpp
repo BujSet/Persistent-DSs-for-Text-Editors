@@ -7,9 +7,8 @@ namespace pobj = pmem::obj;
 using namespace std;
 
 int main (int argc, char *argv[]) {
-	
 	pobj::pool<GapBuffer::root> pop;
-	int input, len_str, offset;
+	int input, offset;
 	string file_path, insert_str, out_path;
 
 	file_path = "gap_buffer_in.txt";

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <fstream>
 #include <chrono>
 
 using namespace std;
@@ -161,11 +162,76 @@ public:
         gapLeft--;
         buffer.at(gapLeft) = '_';
     }
+
+    void close(string file_path) {
+        std::string text (buffer.begin(), buffer.end());
+        ofstream out_file;
+        out_file.open(file_path);
+        // Write the string to the file.
+        out_file << text;
+        out_file.close();
+    }
 };
+
+static void evaluate(GapBuffer gapBuffer, string file_name, int n){
+    high_resolution_clock::time_point start, start1;
+    high_resolution_clock::time_point end, end1;
+    duration<double, std::milli> duration_sec;
+    std::string item_name;
+    std::ifstream nameFileout;
+    string line;
+    int count = 0;
+
+    nameFileout.open("input_eval.txt");
+    start = high_resolution_clock::now();
+    // while(std::getline(nameFileout, line))
+    while((count < (-1)*n) && (nameFileout >> line))
+    {
+        gapBuffer.insert(line, count);
+        count++;
+    }    
+    gapBuffer.close(file_name + "_pers_test.txt");
+    end = high_resolution_clock::now();
+
+    duration_sec = std::chrono::duration_cast<duration<double, std::milli>>(end - start);
+    cout << "Insert and save time (in ms):" << duration_sec.count() << endl;
+}
+
+static void evaluate_typing_simul_1min(GapBuffer gapBuffer, string file_name, int n){
+    high_resolution_clock::time_point start, start1, start2;
+    high_resolution_clock::time_point end, end1, end2;
+    duration<double, std::milli> duration_sec, save_duration_sec, total_duration_sec = std::chrono::milliseconds::zero();
+    std::string item_name;
+    std::ifstream nameFileout;
+    char ch;
+    int count = 0;
+    string line;
+
+    nameFileout.open("input_eval.txt");
+    start = high_resolution_clock::now();
+    while((count < (-1)*n) && (nameFileout >> noskipws >> ch)) {
+        start1 = high_resolution_clock::now();
+        gapBuffer.insert(string(1, ch), count);
+        end1 = high_resolution_clock::now();
+        total_duration_sec += std::chrono::duration_cast<duration<double, std::milli>>(end1 - start1);
+        count++;
+    }
+    start2 = high_resolution_clock::now();
+    gapBuffer.close(file_name + "_pers_test.txt");
+    end2 = high_resolution_clock::now();
+    save_duration_sec = std::chrono::duration_cast<duration<double, std::milli>>(end2 - start2);
+
+    end = high_resolution_clock::now();
+    duration_sec = std::chrono::duration_cast<duration<double, std::milli>>(end - start);
+    
+    cout << "Insert and save time (in ms):" << duration_sec.count() << endl;
+    cout << "Average character insert latency (in ms):" << total_duration_sec.count()/count << endl;
+    cout << "Save to file latency (in ms):" << save_duration_sec.count() << endl;
+}
 
 int main(int argc, char *argv[])
 {
-    size_t n = 1;
+    int n = 1;
 
     if (argc == 2)
     {
@@ -180,11 +246,21 @@ int main(int argc, char *argv[])
     high_resolution_clock::time_point start;
     high_resolution_clock::time_point end;
     duration<double, std::milli> duration_sec;
+    string file_name = "init_read";
 
     GapBuffer gapBuffer;
 
+    if(n < 0){        
+        cout<<"Gapbuffer volatile version\nInsert words evaluation mode\n";
+        evaluate(gapBuffer, file_name, n);
+
+        cout<<"Gapbuffer volatile version\nTyping simulation character wise evaluation mode\n";
+        evaluate_typing_simul_1min(gapBuffer, file_name, n);
+        exit(0);
+    }
+
     start = high_resolution_clock::now();
-    for (size_t i = 0; i < n; i++)
+    for (int i = 0; i < n; i++)
     {
         gapBuffer.insert("a", 0);
     }
@@ -194,7 +270,7 @@ int main(int argc, char *argv[])
     cout << "insert time:" << duration_sec.count() << " ms" << endl;
 
     start = high_resolution_clock::now();
-    for (size_t i = 0; i < n; i++)
+    for (int i = 0; i < n; i++)
     {
         gapBuffer.deleteCharacter(0);
     }

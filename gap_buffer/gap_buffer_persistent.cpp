@@ -18,8 +18,6 @@ void GapBuffer::create(pobj::pool<GapBuffer::root> pop, string file_path) {
 
 	pobj::transaction::run(pop, [&] {
         gBuffer = r->root_gap_buffer;	
-	
-		GapBuffer::char_vector_type &cvector = *(gBuffer->buffer);
 
 		in_file.open(file_path);
 		
@@ -44,8 +42,6 @@ void GapBuffer::create(pobj::pool<GapBuffer::root> pop, string file_path) {
 }
 
 void GapBuffer::initValues(pobj::persistent_ptr<GapBuffer::gap_buffer> gBuffer) {
-    
-
     cout << "Total Size: " << gBuffer-> size << endl;
 
     int size = gBuffer->buffer->size();
@@ -55,9 +51,9 @@ void GapBuffer::initValues(pobj::persistent_ptr<GapBuffer::gap_buffer> gBuffer) 
     int gap_left, gap_right, gap_size;
     gap_left = gap_right = gap_size = -1;
 
-    for (size_t i = 0; i < size; i++) {
+    for (int i = 0; i < size; i++) {
         if (char_vector.at(i) == '_') {
-            if (gap_left = 0) {
+            if (gap_left == 0) {
                 gap_left = i;
             } else {
                 gap_right = i;
@@ -68,7 +64,7 @@ void GapBuffer::initValues(pobj::persistent_ptr<GapBuffer::gap_buffer> gBuffer) 
 
     if (gap_left == -1) {
         
-        for (size_t i = 0; i < DEFAULT_BUFFER_SIZE; i++) {
+        for (int i = 0; i < DEFAULT_BUFFER_SIZE; i++) {
             char_vector.push_back('_');
         }
         gap_left = 0;
@@ -105,7 +101,7 @@ void GapBuffer::insert(pobj::pool<GapBuffer::root> pop, string input, int positi
 
     pobj::transaction::run(pop, [&]{
         VALGRIND_PMC_REGISTER_PMEM_MAPPING(&(root_gap_buffer->buffer), sizeof(GapBuffer::char_vector_type));
-        if (position != root_gap_buffer->gap_left) {
+        if (position != (int)(root_gap_buffer->gap_left)) {
             GapBuffer::moveCursor(pop, position);
         } 
 
@@ -141,7 +137,7 @@ void GapBuffer::deleteCharacter(pobj::pool<GapBuffer::root> pop, int position) {
 
     pobj::transaction::run(pop, [&]{
         
-        if (root_gap_buffer->gap_left != position + 1) {
+        if ((int)(root_gap_buffer->gap_left) != position + 1) {
             GapBuffer::moveCursor(pop, position + 1);
         }
         root_gap_buffer->gap_left--;
@@ -164,7 +160,7 @@ void GapBuffer::moveCursor(pobj::pool<GapBuffer::root> pop, int position) {
 
     pobj::persistent_ptr<GapBuffer::gap_buffer> root_gap_buffer = r->root_gap_buffer;
     
-    if (position < root_gap_buffer->gap_left) {
+    if (position < (int)(root_gap_buffer->gap_left)) {
         GapBuffer::left(pop, position);
     } else {
         GapBuffer::right(pop, position);
@@ -189,7 +185,7 @@ void GapBuffer::left(pobj::pool<GapBuffer::root> pop, int position) {
     // << root_gap_buffer->gap_left << " and gap_right: " << root_gap_buffer->gap_right << endl;
         
     // Moves the gap left, character by character
-    while (position < root_gap_buffer->gap_left) {
+    while (position < (int)(root_gap_buffer->gap_left)) {
         root_gap_buffer->gap_left--;
         root_gap_buffer->gap_right--;
         char_vector.at(root_gap_buffer->gap_right + 1) = char_vector[root_gap_buffer->gap_left];
@@ -215,7 +211,7 @@ void GapBuffer::right(pobj::pool<GapBuffer::root> pop, int position) {
     // << root_gap_buffer->gap_left << " and gap_right: " << root_gap_buffer->gap_right << endl;
     
     // Moves the gap right, character by character
-    while (position > root_gap_buffer->gap_left) {
+    while (position > (int)(root_gap_buffer->gap_left)) {
         root_gap_buffer->gap_left++;
         root_gap_buffer->gap_right++;
         char_vector.at(root_gap_buffer->gap_left - 1) = char_vector[root_gap_buffer->gap_right];
@@ -239,7 +235,7 @@ void GapBuffer::grow(pobj::pool<GapBuffer::root> pop, int k, int position) {
     pobj::persistent_ptr<GapBuffer::gap_buffer> root_gap_buffer = r->root_gap_buffer; 
     GapBuffer::char_vector_type &char_vector = *(root_gap_buffer->buffer);  
 
-    size_t size = root_gap_buffer->size; 
+    int size = root_gap_buffer->size; 
     std::vector<char> copy_vector(size);
 
     VALGRIND_PMC_REGISTER_PMEM_MAPPING(&(root_gap_buffer->buffer), sizeof(GapBuffer::char_vector_type));
@@ -247,7 +243,7 @@ void GapBuffer::grow(pobj::pool<GapBuffer::root> pop, int k, int position) {
 
     // The characters of the buffer after 'position' 
     // are copied to the copy array
-    for (size_t i = position; i < size; i++) {
+    for (int i = position; i < size; i++) {
         copy_vector[i - position] = char_vector[i];
     }
 
@@ -258,7 +254,7 @@ void GapBuffer::grow(pobj::pool<GapBuffer::root> pop, int k, int position) {
     // cout << "Size of vector<char>: " << char_vector.size() << endl;
 
     // The remaining array is inserted
-    for (size_t i = 0; i < k + position; i++) {
+    for (int i = 0; i < k + position; i++) {
         char_vector[position + i + k] = copy_vector[i];
     }
 

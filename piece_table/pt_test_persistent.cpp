@@ -115,10 +115,10 @@ int main(int argc, char *argv[])
     PieceTable::create(pop, file_name + ".txt");
 
     if(n < 0){
-        cout<<"Piece table persistent version\nInsert metric evaluation mode\n";
+        cout<<"Piece table persistent version\nInsert words evaluation mode\n";
         evaluate(pop, file_name, n);
 
-        cout<<"Piece table persistent version\nTyping simulation evaluation mode\n";
+        cout<<"Piece table persistent version\nTyping simulation character wise evaluation mode\n";
         evaluate_typing_simul_1min(pop, file_name, n);
         exit(0);
     }
