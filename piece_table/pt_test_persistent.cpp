@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <chrono>
+
 #include "piece_table_persistent.h"
 
 namespace pobj = pmem::obj;
@@ -9,24 +10,26 @@ using namespace std;
 using std::chrono::duration;
 using std::chrono::high_resolution_clock;
 
-static void evaluate(pobj::pool<PieceTable::root> pop, string file_name){
+static void evaluate(pobj::pool<PieceTable::root> pop, string file_name, int n){
     high_resolution_clock::time_point start, start1;
     high_resolution_clock::time_point end, end1;
     duration<double, std::milli> duration_sec;
     std::string item_name;
     std::ifstream nameFileout;
     string line;
+    int count = 0;
 
     nameFileout.open("input_eval.txt");
     start = high_resolution_clock::now();
     // while(std::getline(nameFileout, line))
-    while(nameFileout >> line)
+    while((count < (-1)*n) && (nameFileout >> line))
     {
         // start1 = high_resolution_clock::now();
         PieceTable::insert(pop, line);
         // end1 = high_resolution_clock::now();
         // duration_sec = std::chrono::duration_cast<duration<double, std::milli>>(end1 - start1);
         // cout << "1 word insert time:" << duration_sec.count() << endl;
+        count++;
     }    
     PieceTable::close(pop, file_name + "_pers_test.txt");
     end = high_resolution_clock::now();
@@ -35,7 +38,7 @@ static void evaluate(pobj::pool<PieceTable::root> pop, string file_name){
     cout << "Insert and save time (in ms):" << duration_sec.count() << endl;
 }
 
-static void evaluate_typing_simul_1min(pobj::pool<PieceTable::root> pop, string file_name){
+static void evaluate_typing_simul_1min(pobj::pool<PieceTable::root> pop, string file_name, int n){
     high_resolution_clock::time_point start, start1, start2;
     high_resolution_clock::time_point end, end1, end2;
     duration<double, std::milli> duration_sec, save_duration_sec, total_duration_sec = std::chrono::milliseconds::zero();
@@ -47,7 +50,7 @@ static void evaluate_typing_simul_1min(pobj::pool<PieceTable::root> pop, string 
 
     nameFileout.open("input_eval.txt");
     start = high_resolution_clock::now();
-    while((count < 480) && (nameFileout >> noskipws >> ch)) {
+    while((count < (-1)*n) && (nameFileout >> noskipws >> ch)) {
         start1 = high_resolution_clock::now();
         PieceTable::insert(pop, string(1, ch));
         end1 = high_resolution_clock::now();
@@ -111,14 +114,12 @@ int main(int argc, char *argv[])
 
     PieceTable::create(pop, file_name + ".txt");
 
-    if(n == -1){
+    if(n < 0){
         cout<<"Piece table persistent version\nInsert metric evaluation mode\n";
-        evaluate(pop, file_name);
-        exit(0);
-    }
-    else if(n == -2){
+        evaluate(pop, file_name, n);
+
         cout<<"Piece table persistent version\nTyping simulation evaluation mode\n";
-        evaluate_typing_simul_1min(pop, file_name);
+        evaluate_typing_simul_1min(pop, file_name, n);
         exit(0);
     }
 

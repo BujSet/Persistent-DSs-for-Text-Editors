@@ -32,8 +32,11 @@ void GapBuffer::create(pobj::pool<GapBuffer::root> pop, string file_path) {
 		strStream << in_file.rdbuf();
         string fileContents = strStream.str();
         vector<char> char_vector (fileContents.begin(), fileContents.end()); 
+
+        VALGRIND_PMC_REGISTER_PMEM_MAPPING(&(gBuffer->buffer), sizeof(GapBuffer::char_vector_type));
         auto temp = pobj::make_persistent<GapBuffer::char_vector_type>(char_vector);
 		gBuffer->buffer = temp;
+        VALGRIND_PMC_REMOVE_PMEM_MAPPING(&(gBuffer->buffer), sizeof(GapBuffer::char_vector_type));
 
         GapBuffer::initValues(gBuffer);
 
@@ -101,7 +104,7 @@ void GapBuffer::insert(pobj::pool<GapBuffer::root> pop, string input, int positi
     int i = 0, len = input.length();
 
     pobj::transaction::run(pop, [&]{
-        
+        VALGRIND_PMC_REGISTER_PMEM_MAPPING(&(root_gap_buffer->buffer), sizeof(GapBuffer::char_vector_type));
         if (position != root_gap_buffer->gap_left) {
             GapBuffer::moveCursor(pop, position);
         } 
@@ -118,7 +121,8 @@ void GapBuffer::insert(pobj::pool<GapBuffer::root> pop, string input, int positi
             root_gap_buffer->gap_left++;
             i++;
             position++;
-        }  				
+        }  	
+        VALGRIND_PMC_REMOVE_PMEM_MAPPING(&(root_gap_buffer->buffer), sizeof(GapBuffer::char_vector_type));			
 	});   
 }
 
@@ -238,6 +242,7 @@ void GapBuffer::grow(pobj::pool<GapBuffer::root> pop, int k, int position) {
     size_t size = root_gap_buffer->size; 
     std::vector<char> copy_vector(size);
 
+    VALGRIND_PMC_REGISTER_PMEM_MAPPING(&(root_gap_buffer->buffer), sizeof(GapBuffer::char_vector_type));
     // cout << " Let's see what is happening inside grow()\n"; 
 
     // The characters of the buffer after 'position' 
@@ -261,7 +266,7 @@ void GapBuffer::grow(pobj::pool<GapBuffer::root> pop, int k, int position) {
 
     root_gap_buffer->size += k;
     root_gap_buffer->gap_right += k;            				
-
+    VALGRIND_PMC_REMOVE_PMEM_MAPPING(&(root_gap_buffer->buffer), sizeof(GapBuffer::char_vector_type));
 } 
 
 void GapBuffer::print_buffer(pobj::pool<GapBuffer::root> pop) {
@@ -309,16 +314,4 @@ void GapBuffer::close(pobj::pool<GapBuffer::root> pop, string file_path) {
 	// Write the string to the file.
     out_file << text;
 	out_file.close();
-
-	pobj::transaction::run(pop, [&]{
-        
-		/*
-            Check if need to delete something while closing?
-            PieceTable::piece_vector_type &pvector = *(ptable->pieces);
-
-            for (int i = 0; i < pvector.size(); i++) {
-                pobj::delete_persistent<PieceTable::piece>(&pvector[i]);
-            }
-        */
-	});
 }

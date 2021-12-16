@@ -19,6 +19,7 @@ void PieceTable::create(pobj::pool<PieceTable::root> pop, string file_path) {
 	pobj::transaction::run(pop, [&]{
 		ptable = r->root_piece_table;		
 		(ptable->pieces) = pobj::make_persistent<PieceTable::piece_vector_type>();
+		
 		PieceTable::piece_vector_type &pvector = *(ptable->pieces);
 
 		in_file.open(file_path);
@@ -30,30 +31,39 @@ void PieceTable::create(pobj::pool<PieceTable::root> pop, string file_path) {
 
 		stringstream strStream;
 		strStream << in_file.rdbuf();
+		VALGRIND_PMC_REGISTER_PMEM_MAPPING(&(ptable->original), sizeof(PieceTable::string_type));
 		auto t1 = pobj::make_persistent<string_type>(strStream.str().c_str(), strlen(strStream.str().c_str()));
 		ptable->original = t1;
+		VALGRIND_PMC_REMOVE_PMEM_MAPPING(&(ptable->original), sizeof(PieceTable::string_type));
 
 		// Static allocation - Fix for Intel PMDK bug resulting in out of transaction memory error
 		string tmp;
 		for(int i = 0; i < 5000; i++){
 			tmp += "-";
 		}
+
+		VALGRIND_PMC_REGISTER_PMEM_MAPPING(&(ptable->add), sizeof(PieceTable::string_type));
 		auto t2 = pobj::make_persistent<string_type>(tmp.c_str(), strlen(tmp.c_str()));
 		// (ptable->add)->append(tmp.c_str());
 		ptable->add = t2;
+		VALGRIND_PMC_REMOVE_PMEM_MAPPING(&(ptable->add), sizeof(PieceTable::string_type));
 
+		VALGRIND_PMC_REGISTER_PMEM_MAPPING(&(ptable->pieces), sizeof(PieceTable::piece_vector_type));
 		p.src = ORIGINAL;
 		p.start = 0;
 		p.len = ptable->original->size();
 		pvector.push_back(p);
+		VALGRIND_PMC_REMOVE_PMEM_MAPPING(&(ptable->pieces), sizeof(PieceTable::piece_vector_type));
 
 		ptable->add_start = 0;
 
+		VALGRIND_PMC_REGISTER_PMEM_MAPPING(&(ptable->cursor_pt), sizeof(PieceTable::cursor));
 		c = pobj::make_persistent<PieceTable::cursor>();
 		c->pos = 0;
 		c->piece_idx = 0;
 		c->piece_offset = 0;
 		ptable->cursor_pt = c;
+		VALGRIND_PMC_REMOVE_PMEM_MAPPING(&(ptable->cursor_pt), sizeof(PieceTable::cursor));
 	});
 }
 
@@ -71,6 +81,7 @@ string PieceTable::stitch(pobj::pool<PieceTable::root> pop) {
 	pobj::transaction::run(pop, [&]{
 		PieceTable::piece_vector_type &pvector = *(ptable->pieces);
 
+		VALGRIND_PMC_REGISTER_PMEM_MAPPING(&(ptable->pieces), sizeof(PieceTable::piece_vector_type));
 		for (size_t i = 0; i < pvector.size(); i++) {
 			p = &pvector[i];
 			assert(p);
@@ -82,6 +93,7 @@ string PieceTable::stitch(pobj::pool<PieceTable::root> pop) {
 				ret.append(ptable->add->c_str(), p->start, p->len);
 			}
 		}
+		VALGRIND_PMC_REMOVE_PMEM_MAPPING(&(ptable->pieces), sizeof(PieceTable::piece_vector_type));
 	});
 	return ret;
 }
@@ -106,10 +118,12 @@ void PieceTable::insert(pobj::pool<PieceTable::root> pop, string s) {
 		p.len = s.size();
 		ptable->add_start += s.size();
 
+		VALGRIND_PMC_REGISTER_PMEM_MAPPING(&(ptable->add), sizeof(PieceTable::string_type));
 		// Next we place the string into the add buffer
 		(ptable->add)->replace(p.start, p.len, s.c_str());
-		// (ptable->add)->append(s.c_str());
+		VALGRIND_PMC_REMOVE_PMEM_MAPPING(&(ptable->add), sizeof(PieceTable::string_type));
 		
+		VALGRIND_PMC_REGISTER_PMEM_MAPPING(&(ptable->pieces), sizeof(PieceTable::piece_vector_type));
 		c = ptable->cursor_pt;
 		piece = pvector[c->piece_idx];
 
@@ -142,6 +156,7 @@ void PieceTable::insert(pobj::pool<PieceTable::root> pop, string s) {
 			c->piece_idx++;
 			c->piece_offset = 0;
 		}
+		VALGRIND_PMC_REMOVE_PMEM_MAPPING(&(ptable->pieces), sizeof(PieceTable::piece_vector_type));
 	});
 
 }
@@ -164,6 +179,7 @@ void PieceTable::remove(pobj::pool<PieceTable::root> pop, size_t bytes_to_remove
 	pobj::transaction::run(pop, [&]{
 		PieceTable::piece_vector_type &pvector = *(ptable->pieces);
 
+		VALGRIND_PMC_REGISTER_PMEM_MAPPING(&(ptable->pieces), sizeof(PieceTable::piece_vector_type));
 		while (bytes_to_remove) {
 			c = ptable->cursor_pt;
 			piece = &pvector[c->piece_idx];
@@ -213,6 +229,7 @@ void PieceTable::remove(pobj::pool<PieceTable::root> pop, size_t bytes_to_remove
 				}
 			}
 		}
+		VALGRIND_PMC_REMOVE_PMEM_MAPPING(&(ptable->pieces), sizeof(PieceTable::piece_vector_type));
 	});
 }
 
@@ -255,6 +272,7 @@ void PieceTable::seek(pobj::pool<PieceTable::root> pop, size_t offset, PieceTabl
 	pobj::transaction::run(pop, [&]{		
 		PieceTable::piece_vector_type &pvector = *(ptable->pieces);
 
+		VALGRIND_PMC_REGISTER_PMEM_MAPPING(&(ptable->pieces), sizeof(PieceTable::piece_vector_type));
 		while (bytes_moved < offset) {
 			bytes_to_move = offset - bytes_moved;
 			piece = pvector[c->piece_idx];
@@ -284,6 +302,7 @@ void PieceTable::seek(pobj::pool<PieceTable::root> pop, size_t offset, PieceTabl
 				c->piece_offset = pvector[c->piece_idx].len;
 			}
 		}	
+		VALGRIND_PMC_REMOVE_PMEM_MAPPING(&(ptable->pieces), sizeof(PieceTable::piece_vector_type));
 	});
 }
 

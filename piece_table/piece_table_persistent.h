@@ -7,6 +7,7 @@
 #include <libpmemobj++/persistent_ptr.hpp>
 #include <libpmemobj++/pool.hpp>
 #include <libpmemobj++/container/string.hpp>
+#include <valgrind/pmemcheck.h>
 
 #include <string>
 #include <vector>

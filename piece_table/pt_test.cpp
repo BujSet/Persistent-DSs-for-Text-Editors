@@ -7,31 +7,31 @@ using namespace std;
 using std::chrono::duration;
 using std::chrono::high_resolution_clock;
 
-static void evaluate(PieceTable::PT *T, string file_path){
+static void evaluate(PieceTable::PT *T, string file_path, int n){
     high_resolution_clock::time_point start;
     high_resolution_clock::time_point end;
     duration<double, std::milli> duration_sec;
-    std::string item_name;
     std::ifstream nameFileout;
-
-    nameFileout.open("input_eval.txt");
+    int count = 0;
     string line;
+
+    nameFileout.open("input_eval.txt");    
     start = high_resolution_clock::now();
-    while(std::getline(nameFileout, line))
+    while((count < (-1)*n) && (nameFileout >> line))
     {
         PieceTable::insert(T, line);
         PieceTable::close(T, file_path + "_vol_test.txt");
+        count++;
     }
     end = high_resolution_clock::now();
     duration_sec = std::chrono::duration_cast<duration<double, std::milli>>(end - start);
     cout << "Insert and save time (in ms):" << duration_sec.count() << endl;
 }
 
-static void evaluate_typing_simul_1min(PieceTable::PT *T, string file_path){
+static void evaluate_typing_simul_1min(PieceTable::PT *T, string file_path, int n){
     high_resolution_clock::time_point start, start1, start2;
     high_resolution_clock::time_point end, end1, end2;
     duration<double, std::milli> duration_sec, save_duration_sec = std::chrono::milliseconds::zero(), total_duration_sec = std::chrono::milliseconds::zero();
-    std::string item_name;
     std::ifstream nameFileout;
     char ch;
     int count = 0;
@@ -39,7 +39,7 @@ static void evaluate_typing_simul_1min(PieceTable::PT *T, string file_path){
 
     nameFileout.open("input_eval.txt");
     start = high_resolution_clock::now();
-    while((count < 480) && (nameFileout >> noskipws >> ch)) {
+    while((count < (-1)*n) && (nameFileout >> noskipws >> ch)) {
         start1 = high_resolution_clock::now();
         PieceTable::insert(T, string(1, ch));
         end1 = high_resolution_clock::now();
@@ -82,14 +82,12 @@ int main(int argc, char *argv[])
     PieceTable::PT *T = (PieceTable::PT *)malloc(sizeof(PieceTable::PT));
     PieceTable::open(T, file_path + ".txt");
 
-    if(n == -1){
+    if(n < 0){
         cout<<"Piece table volatile version\nInsert metric evaluation mode\n";
-        evaluate(T, file_path);
-        exit(0);
-    }
-    else if(n == -2){
+        evaluate(T, file_path, n);
+
         cout<<"Piece table volatile version\nCharlevel Insert metric evaluation mode\n";
-        evaluate_typing_simul_1min(T, file_path);
+        evaluate_typing_simul_1min(T, file_path, n);
         exit(0);
     }
 
