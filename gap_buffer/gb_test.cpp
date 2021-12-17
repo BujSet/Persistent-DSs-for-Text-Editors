@@ -174,9 +174,9 @@ public:
 };
 
 static void evaluate(GapBuffer gapBuffer, string file_name, int n){
-    high_resolution_clock::time_point start, start1;
-    high_resolution_clock::time_point end, end1;
-    duration<double, std::milli> duration_sec;
+    high_resolution_clock::time_point start, start1, start2;
+    high_resolution_clock::time_point end, end1, end2;
+    duration<double, std::milli> duration_sec, save_duration_sec, total_duration_sec = std::chrono::milliseconds::zero();
     std::string item_name;
     std::ifstream nameFileout;
     string line;
@@ -184,17 +184,30 @@ static void evaluate(GapBuffer gapBuffer, string file_name, int n){
 
     nameFileout.open("input_eval.txt");
     start = high_resolution_clock::now();
-    // while(std::getline(nameFileout, line))
     while((count < (-1)*n) && (nameFileout >> line))
     {
+        start1 = high_resolution_clock::now();
         gapBuffer.insert(line, count);
+        end1 = high_resolution_clock::now();
+        total_duration_sec += std::chrono::duration_cast<duration<double, std::milli>>(end1 - start1);
+
+        start2 = high_resolution_clock::now();
+        gapBuffer.close(file_name + "_vol_test.txt");
+        end2 = high_resolution_clock::now();
+        save_duration_sec += std::chrono::duration_cast<duration<double, std::milli>>(end2 - start2);
         count++;
     }    
-    gapBuffer.close(file_name + "_pers_test.txt");
     end = high_resolution_clock::now();
-
     duration_sec = std::chrono::duration_cast<duration<double, std::milli>>(end - start);
-    cout << "Insert and save time (in ms):" << duration_sec.count() << endl;
+
+    cout << "Total insert and save time (in ms):" << duration_sec.count() << endl;
+    cout << "Average character insert latency (in ms):" << total_duration_sec.count()/count << endl;
+    cout << "Average Save to file latency (in ms):" << save_duration_sec.count()/count << endl;
+
+    FILE *fpt;
+    fpt = fopen("volatile_gb_char.csv", "a+");
+    fprintf(fpt, "%d, %f, %f, %f\n", count, duration_sec.count(), total_duration_sec.count()/count, save_duration_sec.count()/count);
+    fclose(fpt);
 }
 
 static void evaluate_typing_simul_1min(GapBuffer gapBuffer, string file_name, int n){
@@ -214,19 +227,24 @@ static void evaluate_typing_simul_1min(GapBuffer gapBuffer, string file_name, in
         gapBuffer.insert(string(1, ch), count);
         end1 = high_resolution_clock::now();
         total_duration_sec += std::chrono::duration_cast<duration<double, std::milli>>(end1 - start1);
+
+        start2 = high_resolution_clock::now();
+        gapBuffer.close(file_name + "_vol_test.txt");
+        end2 = high_resolution_clock::now();
+        save_duration_sec += std::chrono::duration_cast<duration<double, std::milli>>(end2 - start2);
         count++;
     }
-    start2 = high_resolution_clock::now();
-    gapBuffer.close(file_name + "_pers_test.txt");
-    end2 = high_resolution_clock::now();
-    save_duration_sec = std::chrono::duration_cast<duration<double, std::milli>>(end2 - start2);
-
     end = high_resolution_clock::now();
     duration_sec = std::chrono::duration_cast<duration<double, std::milli>>(end - start);
-    
-    cout << "Insert and save time (in ms):" << duration_sec.count() << endl;
+
+    cout << "Total insert and save time (in ms):" << duration_sec.count() << endl;
     cout << "Average character insert latency (in ms):" << total_duration_sec.count()/count << endl;
-    cout << "Save to file latency (in ms):" << save_duration_sec.count() << endl;
+    cout << "Average Save to file latency (in ms):" << save_duration_sec.count()/count << endl;
+
+    FILE *fpt;
+    fpt = fopen("volatile_gb_char.csv", "a+");
+    fprintf(fpt, "%d, %f, %f, %f\n", count, duration_sec.count(), total_duration_sec.count()/count, save_duration_sec.count()/count);
+    fclose(fpt);
 }
 
 int main(int argc, char *argv[])
@@ -251,6 +269,7 @@ int main(int argc, char *argv[])
     GapBuffer gapBuffer;
 
     if(n < 0){        
+        cout<<endl<<"n = "<<(-1)*n<<endl;
         cout<<"Gapbuffer volatile version\nInsert words evaluation mode\n";
         evaluate(gapBuffer, file_name, n);
 
