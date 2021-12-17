@@ -205,7 +205,7 @@ static void evaluate(GapBuffer gapBuffer, string file_name, int n){
     cout << "Average Save to file latency (in ms):" << save_duration_sec.count()/count << endl;
 
     FILE *fpt;
-    fpt = fopen("volatile_gb_char.csv", "a+");
+    fpt = fopen("volatile_gb_word.csv", "a+");
     fprintf(fpt, "%d, %f, %f, %f\n", count, duration_sec.count(), total_duration_sec.count()/count, save_duration_sec.count()/count);
     fclose(fpt);
 }
