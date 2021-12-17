@@ -31,12 +31,11 @@ class GapBuffer {
             }
 
             /**
-             *  This function moves is used to grow the gap 
+             *  This function is used to grow the gap 
              *  at index position and return the vector 
              */
             void grow(int k, int position) {
                 
-                // char copy[size];
                 vector<char> copy(size);
 
                 // The characters of the buffer after 'position' 
@@ -64,7 +63,6 @@ class GapBuffer {
              *  This function moves the gap to the left, in the vector 
              */
             void left(int position) {
-                // Moves the gap left, character by character
                 while (position < gapLeft) {
                     gapLeft--;
                     gapRight--;
@@ -77,7 +75,6 @@ class GapBuffer {
              *  This function moves the gap to the right, in the vector 
              */
             void right(int position) {
-                // Moves the gap right, character by character
                 while (position > gapLeft) {
                     gapLeft++;
                     gapRight++;
@@ -88,7 +85,7 @@ class GapBuffer {
 
             /**
              *  This function controls the movement of the gap
-             *  by checking its position to the point of insertion 
+             *  by checking its position relative to the point of insertion 
              */
             void moveCursor(int position) {
                 if (position < gapLeft) {
