@@ -8,9 +8,9 @@ using std::chrono::duration;
 using std::chrono::high_resolution_clock;
 
 static void evaluate(PieceTable::PT *T, string file_path, int n){
-    high_resolution_clock::time_point start;
-    high_resolution_clock::time_point end;
-    duration<double, std::milli> duration_sec;
+    high_resolution_clock::time_point start, start1, start2;
+    high_resolution_clock::time_point end, end1, end2;
+    duration<double, std::milli> duration_sec, save_duration_sec = std::chrono::milliseconds::zero(), total_duration_sec = std::chrono::milliseconds::zero();
     std::ifstream nameFileout;
     int count = 0;
     string line;
@@ -19,13 +19,28 @@ static void evaluate(PieceTable::PT *T, string file_path, int n){
     start = high_resolution_clock::now();
     while((count < (-1)*n) && (nameFileout >> line))
     {
+        start1 = high_resolution_clock::now();
         PieceTable::insert(T, line);
+        end1 = high_resolution_clock::now();
+        total_duration_sec += std::chrono::duration_cast<duration<double, std::milli>>(end1 - start1);
+
+        start2 = high_resolution_clock::now();
         PieceTable::close(T, file_path + "_vol_test.txt");
+        end2 = high_resolution_clock::now();
+        save_duration_sec += std::chrono::duration_cast<duration<double, std::milli>>(end2 - start2);
         count++;
     }
     end = high_resolution_clock::now();
     duration_sec = std::chrono::duration_cast<duration<double, std::milli>>(end - start);
-    cout << "Insert and save time (in ms):" << duration_sec.count() << endl;
+    
+    cout << "Total insert and save time (in ms):" << duration_sec.count() << endl;
+    cout << "Average character insert latency (in ms):" << total_duration_sec.count()/count << endl;
+    cout << "Average Save to file latency (in ms):" << save_duration_sec.count()/count << endl;
+
+    FILE *fpt;
+    fpt = fopen("volatile_pt_word.csv", "a+");
+    fprintf(fpt, "%d, %f, %f, %f\n", count, duration_sec.count(), total_duration_sec.count()/count, save_duration_sec.count()/count);
+    fclose(fpt);
 }
 
 static void evaluate_typing_simul_1min(PieceTable::PT *T, string file_path, int n){
@@ -49,15 +64,19 @@ static void evaluate_typing_simul_1min(PieceTable::PT *T, string file_path, int 
         PieceTable::close(T, file_path + "_vol_test.txt");
         end2 = high_resolution_clock::now();
         save_duration_sec += std::chrono::duration_cast<duration<double, std::milli>>(end2 - start2);
-        // cout << "Char insert and save latency (in ms):" << duration_sec.count() << endl;
         count++;
     }
     end = high_resolution_clock::now();
     duration_sec = std::chrono::duration_cast<duration<double, std::milli>>(end - start);
     
-    cout << "Insert and save time (in ms):" << duration_sec.count() << endl;
-    cout << "Average character insert latency (in ms):" << duration_sec.count()/count << endl;
-    cout << "Average Save to file latency (in ms):" << save_duration_sec.count() << endl;
+    cout << "Total insert and save time (in ms):" << duration_sec.count() << endl;
+    cout << "Average character insert latency (in ms):" << total_duration_sec.count()/count << endl;
+    cout << "Average Save to file latency (in ms):" << save_duration_sec.count()/count << endl;
+
+    FILE *fpt;
+    fpt = fopen("volatile_pt_char.csv", "a+");
+    fprintf(fpt, "%d, %f, %f, %f\n", count, duration_sec.count(), total_duration_sec.count()/count, save_duration_sec.count()/count);
+    fclose(fpt);
 }
 
 int main(int argc, char *argv[])
@@ -83,6 +102,7 @@ int main(int argc, char *argv[])
     PieceTable::open(T, file_path + ".txt");
 
     if(n < 0){
+        cout<<endl<<"n = "<<(-1)*n<<endl;
         cout<<"Piece table volatile version\nInsert words evaluation mode\n";
         evaluate(T, file_path, n);
 
